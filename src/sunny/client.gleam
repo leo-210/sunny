@@ -11,7 +11,7 @@ pub fn new() -> Client {
   Client(defaults.base_url, False, "")
 }
 
-/// Creates a new commercial openmeteo client.
+/// Creates a new commercial Open-meteo client with the default values
 /// Takes your open-meteo api key as an argument.
 pub fn new_commercial(key: String) -> Client {
   Client(defaults.base_url, True, key)
