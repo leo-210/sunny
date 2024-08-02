@@ -22,10 +22,12 @@ pub fn set_base_url(client: Client, url: String) -> Client {
   Client(..client, base_url: url)
 }
 
+/// Whether the given Client is commercial or not
 pub fn is_commercial(client: Client) -> Bool {
   client.commercial
 }
 
+/// Returns the base url of the given Client
 pub fn get_base_url(client: Client) -> String {
   client.base_url
 }
