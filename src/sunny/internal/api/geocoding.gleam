@@ -8,10 +8,11 @@ import gleam/result
 import sunny/api/geocoding
 import sunny/client
 import sunny/errors
+import sunny/internal/client.{type Client, Client} as _
 import sunny/internal/utils
 
 pub fn make_request(
-  client: client.Client,
+  client: Client,
   params: geocoding.GeocodingParams,
 ) -> Result(List(geocoding.Location), errors.OMApiError) {
   case

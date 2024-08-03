@@ -19,12 +19,11 @@ gleam add sunny@1
 ```gleam
 import sunny
 import sunny/api/geocoding
-import sunny/client
 
 pub fn main() {
   // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
   // API access 
-  let sunny = client.new()
+  let sunny = sunny.new()
 
   let assert Ok(location) =
     get_first_location(sunny, {
@@ -33,7 +32,7 @@ pub fn main() {
     })
 
   io.println(
-    "Marseille is located at :"
+    "Marseille is located at :\n"
     <> float.to_string(location.latitude)
     <> "\n"
     <> float.to_string(location.longitude),
