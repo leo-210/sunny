@@ -18,6 +18,8 @@ gleam add sunny@1
 ### Getting the coordinates of a city
 ```gleam
 import sunny
+import sunny/api/geocoding
+import sunny/client
 
 pub fn main() {
   // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
