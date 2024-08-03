@@ -32,7 +32,8 @@ pub fn main() {
     })
 
   io.println(
-    "Marseille is located at :\n"
+    location.name
+    <> " is located at :\n"
     <> float.to_string(location.latitude)
     <> "\n"
     <> float.to_string(location.longitude),

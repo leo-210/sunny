@@ -1,4 +1,6 @@
-//// The module for interacting with the Geocoding API
+//// The module for interacting with the Geocoding API.
+//// Useful for getting the coordinates of a city to then get the weather 
+//// forecast.
 //// 
 //// ### Example
 //// ```gleam
@@ -10,7 +12,6 @@
 ////   // API access 
 ////   let sunny = sunny.new()
 //// 
-////   // Throw assertion error if no results are found.
 ////   let assert Ok(location) =
 ////     geocoding.get_first_location(sunny, {
 ////       geocoding.params("marseille")
@@ -18,7 +19,8 @@
 ////     })
 //// 
 ////   io.println(
-////     "Marseille is located at :\n"
+////     location.name
+////     <> " is located at :\n"
 ////     <> float.to_string(location.latitude)
 ////     <> "\n"
 ////     <> float.to_string(location.longitude),
