@@ -7,6 +7,8 @@ pub opaque type Client {
 
 /// Creates a new Open-meteo client with the default values (that's usually 
 /// what you want).
+/// Use `client.new_commercial("<your_api_key")` if you have a commercial 
+/// Open-meteo API access 
 pub fn new() -> Client {
   Client(defaults.base_url, False, "")
 }
@@ -22,12 +24,19 @@ pub fn set_base_url(client: Client, url: String) -> Client {
   Client(..client, base_url: url)
 }
 
-/// Whether the given Client is commercial or not
+/// Whether the given Client is commercial or not.
 pub fn is_commercial(client: Client) -> Bool {
   client.commercial
 }
 
-/// Returns the base url of the given Client
+/// Returns the base url of the given Client.
 pub fn get_base_url(client: Client) -> String {
   client.base_url
+}
+
+/// Gets the api_key of the given client.
+///
+/// If the client is not commercial, returns an empty string.
+pub fn get_api_key(client: Client) -> String {
+  client.key
 }
