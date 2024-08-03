@@ -50,4 +50,4 @@ The project is open for contributions ! Make a fork, and once you made the chang
 - Weather forecast API
 - Historical forecast API
 - Air quality API
-
+- Make tests to make sure nothing is breaking
