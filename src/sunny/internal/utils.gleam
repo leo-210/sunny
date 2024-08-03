@@ -31,7 +31,7 @@ pub fn get_final_url(
 ) {
   "https://"
   <> case commercial {
-    True -> "commercial-"
+    True -> "customer-"
     False -> ""
   }
   <> case prefix {
@@ -43,7 +43,7 @@ pub fn get_final_url(
   <> "?"
   <> list.fold(params, "", fn(a, b) { a <> b.key <> "=" <> b.value <> "&" })
   <> case commercial {
-    True -> "apikey" <> apikey
+    True -> "apikey" <> "=" <> apikey
     False -> ""
   }
 }
