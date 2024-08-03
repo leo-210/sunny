@@ -1,18 +1,18 @@
+import efetch
 import gleam/dynamic.{type DecodeError, type Decoder, type Dynamic}
-import gleam/hackney.{type Error}
 import gleam/http/request
 import gleam/io
 import gleam/list
 import gleam/result.{try}
 
-pub fn make_request(url: String) -> Result(String, Error) {
+pub fn make_request(url: String) -> Result(String, efetch.HttpError) {
   let assert Ok(request) = request.to(url)
   io.debug(url)
 
   use response <- try(
     request
     |> request.prepend_header("accept", "application/json")
-    |> hackney.send,
+    |> efetch.send,
   )
   Ok(response.body)
 }
