@@ -1,6 +1,3 @@
-import gleam/float
-import gleam/io
-import sunny/api/geocoding
 import sunny/internal/client.{type Client, Client}
 import sunny/internal/defaults
 
