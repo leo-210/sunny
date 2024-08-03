@@ -1,5 +1,3 @@
-import gleam/float
-import gleam/io
 import gleam/result.{try}
 import sunny/api/geocoding
 import sunny/errors.{type OMApiError}
@@ -45,23 +43,4 @@ pub fn get_first_location(
     // Shouldn't happen because an error would be returned by `get_locations`
     [] -> panic as "`get_locations` gave empty list instead of error."
   }
-}
-
-pub fn main() {
-  // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
-  // API access 
-  let sunny = new()
-
-  let assert Ok(location) =
-    get_first_location(sunny, {
-      geocoding.params("marseille")
-      |> geocoding.set_language(geocoding.French)
-    })
-
-  io.println(
-    "Marseille is located at :\n"
-    <> float.to_string(location.latitude)
-    <> "\n"
-    <> float.to_string(location.longitude),
-  )
 }
