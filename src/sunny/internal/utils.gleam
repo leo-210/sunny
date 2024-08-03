@@ -1,13 +1,11 @@
 import efetch
 import gleam/dynamic.{type DecodeError, type Decoder, type Dynamic}
 import gleam/http/request
-import gleam/io
 import gleam/list
 import gleam/result.{try}
 
 pub fn make_request(url: String) -> Result(String, efetch.HttpError) {
   let assert Ok(request) = request.to(url)
-  io.debug(url)
 
   use response <- try(
     request

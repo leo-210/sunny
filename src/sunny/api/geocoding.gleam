@@ -1,4 +1,42 @@
+//// The module for interacting with the Geocoding API
+//// 
+//// ### Example
+//// ```gleam
+//// import sunny
+//// import sunny/api/geocoding
+//// 
+//// pub fn main() {
+////   // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
+////   // API access 
+////   let sunny = sunny.new()
+//// 
+////   // Throw assertion error if no results are found.
+////   let assert Ok(location) =
+////     geocoding.get_first_location(sunny, {
+////       geocoding.params("marseille")
+////       |> geocoding.set_language(geocoding.French)
+////     })
+//// 
+////   io.println(
+////     "Marseille is located at :\n"
+////     <> float.to_string(location.latitude)
+////     <> "\n"
+////     <> float.to_string(location.longitude),
+////   )
+//// }
+//// ```gleam
+
+import gleam/dict
+import gleam/dynamic.{dict, field, float, int, list, optional_field, string}
+import gleam/int
+import gleam/json
+import gleam/list
 import gleam/option
+import gleam/result
+import sunny/client
+import sunny/errors
+import sunny/internal/client.{type Client, Client} as _
+import sunny/internal/utils
 
 /// Enumeration of the available languages for the geocoding API.
 /// Changing the language will impact the search results.
@@ -14,9 +52,14 @@ pub type Language {
   Hindi
 }
 
-/// Represents a place. Can be obtained with the geocoding API.
+/// Represents a location on good old earth. Can be obtained with the geocoding
+/// API.
 pub type Location {
-  /// See https://open-meteo.com/en/docs/geocoding-api for more information on the fields
+  /// See https://open-meteo.com/en/docs/geocoding-api for more information
+  /// on the fields.
+  /// 
+  /// If you want to use specific coordinates, use the `Coordinates` 
+  /// constructor.
   Location(
     latitude: Float,
     longitude: Float,
@@ -37,14 +80,33 @@ pub type Location {
     admin3_id: option.Option(Int),
     admin4_id: option.Option(Int),
   )
-  /// The coordinates of a location. Can be used to get the weather forecast in
-  /// a specific place.
-  Coordinates(latitude: Float, longitude: Float)
 }
 
 /// The different parameters needed to make a request to the geocoding API
 pub type GeocodingParams {
   GeocodingParams(name: String, count: Int, language: Language)
+}
+
+/// Gets a list of locations that match the searched name (specified in `params`).
+pub fn get_locations(
+  client: Client,
+  params: GeocodingParams,
+) -> Result(List(Location), errors.OMApiError) {
+  make_request(client, params)
+}
+
+/// Get the first search result given by `get_locations`.
+/// Overrights the `count` parameter of `params`.
+pub fn get_first_location(
+  client: Client,
+  params: GeocodingParams,
+) -> Result(Location, errors.OMApiError) {
+  use locations <- result.try(get_locations(client, set_count(params, 1)))
+  case locations {
+    [head, ..] -> Ok(head)
+    // Shouldn't happen because an error would be returned by `get_locations`
+    [] -> panic as "`get_locations` gave empty list instead of error."
+  }
 }
 
 /// Creates a new GeocodingParams with the default parameters. Takes the name 
@@ -73,4 +135,118 @@ pub fn set_language(
   language: Language,
 ) -> GeocodingParams {
   GeocodingParams(..params, language: language)
+}
+
+fn make_request(
+  client: Client,
+  params: GeocodingParams,
+) -> Result(List(Location), errors.OMApiError) {
+  case
+    utils.make_request(utils.get_final_url(
+      client.get_base_url(client),
+      "geocoding",
+      client.is_commercial(client),
+      "/search",
+      client.get_api_key(client),
+      geocoding_params_to_params_list(params),
+    ))
+  {
+    Ok(body) -> locations_from_json(body)
+    Error(err) -> Error(errors.HttpError(err))
+  }
+}
+
+fn geocoding_params_to_params_list(
+  params: GeocodingParams,
+) -> List(utils.RequestParameter) {
+  [
+    utils.RequestParameter("name", params.name),
+    utils.RequestParameter("count", int.to_string(params.count)),
+    utils.RequestParameter(
+      "language",
+      language_to_country_code(params.language),
+    ),
+    utils.RequestParameter("format", "json"),
+  ]
+}
+
+fn language_to_country_code(lang: Language) -> String {
+  case lang {
+    English -> "en"
+    German -> "de"
+    French -> "fr"
+    Spanish -> "es"
+    Italian -> "it"
+    Portuguese -> "pt"
+    Russian -> "ru"
+    Turkish -> "tr"
+    Hindi -> "hi"
+  }
+}
+
+type LocationList {
+  LocationList(results: option.Option(List(Location)))
+}
+
+fn locations_from_json(
+  json_string: String,
+) -> Result(List(Location), errors.OMApiError) {
+  let geocoding_decoder =
+    dynamic.decode1(
+      LocationList,
+      optional_field(
+        "results",
+        of: list(utils.decode18(
+          Location,
+          field("latitude", of: float),
+          field("longitude", of: float),
+          field("id", of: int),
+          field("name", of: string),
+          field("elevation", of: float),
+          field("feature_code", of: string),
+          field("country_code", of: string),
+          field("country_id", of: int),
+          field("population", of: int),
+          field("postcodes", of: list(string)),
+          optional_field("admin1", of: string),
+          optional_field("admin2", of: string),
+          optional_field("admin3", of: string),
+          optional_field("admin4", of: string),
+          optional_field("admin1_id", of: int),
+          optional_field("admin2_id", of: int),
+          optional_field("admin3_id", of: int),
+          optional_field("admin4_id", of: int),
+        )),
+      ),
+    )
+  json.decode(from: json_string, using: geocoding_decoder)
+  |> result.map_error(fn(x) { errors.DecodeError(x) })
+  |> result.map(fn(locations_maybe) {
+    case locations_maybe {
+      LocationList(option.Some(locations)) -> Ok(locations)
+      _ -> Error(errors.NoResults)
+    }
+  })
+  |> result.flatten
+}
+
+fn decoding_helper(
+  d: dict.Dict(Int, a),
+  n: Int,
+  l: List(a),
+  max: Int,
+) -> List(a) {
+  case n {
+    n if n >= max -> l
+    n -> {
+      let l =
+        list.append(l, [
+          case dict.get(d, n) {
+            Ok(v) -> v
+            Error(_) -> panic as "This shouldn't happen."
+          },
+        ])
+      decoding_helper(d, n + 1, l, max)
+    }
+  }
 }

@@ -26,7 +26,7 @@ pub fn main() {
   let sunny = sunny.new()
 
   let assert Ok(location) =
-    get_first_location(sunny, {
+    geocoding.get_first_location(sunny, {
       geocoding.params("marseille")
       |> geocoding.set_language(geocoding.French)
     })
