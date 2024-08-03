@@ -20,22 +20,3 @@ pub fn new() -> Client {
 pub fn new_commercial(key: String) -> Client {
   Client(defaults.base_url, True, key)
 }
-
-pub fn main() {
-  // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
-  // API access 
-  let sunny = new_commercial("lol")
-
-  let assert Ok(location) =
-    geocoding.get_first_location(sunny, {
-      geocoding.params("marseille")
-      |> geocoding.set_language(geocoding.French)
-    })
-
-  io.println(
-    "Marseille is located at :\n"
-    <> float.to_string(location.latitude)
-    <> "\n"
-    <> float.to_string(location.longitude),
-  )
-}
