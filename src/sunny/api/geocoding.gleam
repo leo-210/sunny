@@ -127,6 +127,9 @@ pub fn params(name: String) -> GeocodingParams {
 
 /// Creates a new GeocodingParams from the one specified, changing its count
 /// field.
+/// 
+/// The count must be between 1 and 100. If it is out of bounds, the program
+/// will panic.
 pub fn set_count(params: GeocodingParams, count: Int) -> GeocodingParams {
   case count {
     count if count > 100 || count < 1 ->
