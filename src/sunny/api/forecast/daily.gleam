@@ -1,4 +1,5 @@
-/// All supported daily variables.
+/// Variables that can be obtained at for a specific day (for the `daily` field)
+/// 
 /// See https://open-meteo.com/en/docs
 pub type DailyVariable {
   MaximumTemperature2m

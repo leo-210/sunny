@@ -1,4 +1,6 @@
-/// All supported hourly variables.
+/// Variables that can be obtained at a specific time (for `hourly`, `minutely`
+/// and `current` fields)
+/// 
 /// See https://open-meteo.com/en/docs
 pub type InstantVariable {
   Temperature2m
