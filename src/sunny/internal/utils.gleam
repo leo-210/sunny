@@ -3,6 +3,7 @@ import gleam/dynamic.{type DecodeError, type Decoder, type Dynamic}
 import gleam/http/request
 import gleam/list
 import gleam/result.{try}
+import gleam/string
 
 pub fn make_request(url: String) -> Result(String, efetch.HttpError) {
   let assert Ok(request) = request.to(url)
@@ -41,9 +42,18 @@ pub fn get_final_url(
   <> "?"
   <> list.fold(params, "", fn(a, b) { a <> b.key <> "=" <> b.value <> "&" })
   <> case commercial {
-    True -> "apikey" <> "=" <> apikey
+    True -> "&apikey" <> "=" <> apikey
     False -> ""
   }
+}
+
+pub fn param_list_to_string(
+  params: List(a),
+  to_string_fn: fn(a) -> String,
+) -> String {
+  params
+  |> list.fold("", fn(a, b) { a <> to_string_fn(b) <> "," })
+  |> string.drop_right(1)
 }
 
 // Taken from https://github.com/gleam-lang/stdlib/blob/v0.39.0/src/gleam/dynamic.gleam#L1530

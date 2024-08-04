@@ -35,7 +35,6 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
-import sunny/client
 import sunny/errors
 import sunny/internal/client.{type Client, Client} as _
 import sunny/internal/utils
@@ -150,14 +149,15 @@ fn make_request(
   params: GeocodingParams,
 ) -> Result(List(Location), errors.SunnyError) {
   case
-    utils.make_request(utils.get_final_url(
-      client.get_base_url(client),
+    utils.get_final_url(
+      client.base_url,
       "geocoding",
-      client.is_commercial(client),
+      client.commercial,
       "/search",
-      client.get_api_key(client),
-      geocoding_params_to_params_list(params),
-    ))
+      client.key,
+      params |> geocoding_params_to_params_list,
+    )
+    |> utils.make_request
   {
     Ok(body) -> locations_from_json(body)
     Error(err) -> Error(errors.HttpError(err))
