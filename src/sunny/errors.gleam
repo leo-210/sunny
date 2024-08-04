@@ -1,9 +1,14 @@
+//// A module with the errors you could get using Sunny.
+
 import efetch
 import gleam/json
 
-/// A type describing any error that could occur while using this library
-pub type OMApiError {
-  HttpError(efetch.HttpError)
-  DecodeError(json.DecodeError)
+pub type SunnyError {
+  HttpError(err: efetch.HttpError)
+  DecodeError(err: json.DecodeError)
+  ApiError(err: ApiError)
+}
+
+pub type ApiError {
   NoResults
 }

@@ -99,7 +99,7 @@ pub type GeocodingParams {
 pub fn get_locations(
   client: Client,
   params: GeocodingParams,
-) -> Result(List(Location), errors.OMApiError) {
+) -> Result(List(Location), errors.SunnyError) {
   make_request(client, params)
 }
 
@@ -108,7 +108,7 @@ pub fn get_locations(
 pub fn get_first_location(
   client: Client,
   params: GeocodingParams,
-) -> Result(Location, errors.OMApiError) {
+) -> Result(Location, errors.SunnyError) {
   use locations <- result.try(get_locations(client, set_count(params, 1)))
   case locations {
     [head, ..] -> Ok(head)
@@ -148,7 +148,7 @@ pub fn set_language(
 fn make_request(
   client: Client,
   params: GeocodingParams,
-) -> Result(List(Location), errors.OMApiError) {
+) -> Result(List(Location), errors.SunnyError) {
   case
     utils.make_request(utils.get_final_url(
       client.get_base_url(client),
@@ -198,7 +198,7 @@ type LocationList {
 
 fn locations_from_json(
   json_string: String,
-) -> Result(List(Location), errors.OMApiError) {
+) -> Result(List(Location), errors.SunnyError) {
   let geocoding_decoder =
     dynamic.decode1(
       LocationList,
@@ -232,7 +232,7 @@ fn locations_from_json(
   |> result.map(fn(locations_maybe) {
     case locations_maybe {
       LocationList(option.Some(locations)) -> Ok(locations)
-      _ -> Error(errors.NoResults)
+      _ -> Error(errors.ApiError(errors.NoResults))
     }
   })
   |> result.flatten
