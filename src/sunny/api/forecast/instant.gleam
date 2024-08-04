@@ -1,6 +1,6 @@
 /// All supported hourly variables.
 /// See https://open-meteo.com/en/docs
-pub type HourlyVariable {
+pub type InstantVariable {
   Temperature2m
   Temperature80m
   Temperature120m

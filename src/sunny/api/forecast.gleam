@@ -5,10 +5,8 @@ import gleam/io
 import gleam/list
 import gleam/option
 import gleam/result
-import sunny/api/forecast/current
 import sunny/api/forecast/daily
-import sunny/api/forecast/hourly
-import sunny/api/forecast/minutely
+import sunny/api/forecast/instant
 import sunny/errors
 import sunny/internal/api/forecast
 import sunny/internal/client
@@ -72,10 +70,10 @@ fn cell_select_to_string(c: CellSelection) -> String {
 pub type ForecastParams {
   ForecastParams(
     positions: List(position.Position),
-    hourly: List(hourly.HourlyVariable),
+    hourly: List(instant.InstantVariable),
     daily: List(daily.DailyVariable),
-    minutely: List(minutely.MinutelyVariable),
-    current: List(current.CurrentVariable),
+    minutely: List(instant.InstantVariable),
+    current: List(instant.InstantVariable),
     temperature_unit: TemperatureUnit,
     wind_speed_unit: WindSpeedUnit,
     precipitation_unit: PrecipitationUnit,
@@ -135,7 +133,7 @@ pub fn params(positions: List(position.Position)) -> ForecastParams {
 /// Returns a new ForecastParams with the specified hourly list
 pub fn set_hourly(
   p: ForecastParams,
-  h: List(hourly.HourlyVariable),
+  h: List(instant.InstantVariable),
 ) -> ForecastParams {
   ForecastParams(..p, hourly: h)
 }
@@ -151,7 +149,7 @@ pub fn set_daily(
 /// Returns a new ForecastParams with the specified hourly list
 pub fn set_minutely(
   p: ForecastParams,
-  m: List(minutely.MinutelyVariable),
+  m: List(instant.InstantVariable),
 ) -> ForecastParams {
   ForecastParams(..p, minutely: m)
 }
@@ -159,7 +157,7 @@ pub fn set_minutely(
 /// Returns a new ForecastParams with the specified hourly list
 pub fn set_current(
   p: ForecastParams,
-  c: List(current.CurrentVariable),
+  c: List(instant.InstantVariable),
 ) -> ForecastParams {
   ForecastParams(..p, current: c)
 }
@@ -199,7 +197,7 @@ fn forecast_params_to_params_list(
   |> list.append(list_to_param_list(
     params.hourly,
     "hourly",
-    forecast.hourly_to_string,
+    forecast.instant_to_string,
   ))
   |> list.append(list_to_param_list(
     params.daily,
@@ -209,12 +207,12 @@ fn forecast_params_to_params_list(
   |> list.append(list_to_param_list(
     params.minutely,
     "minutely_15",
-    forecast.hourly_to_string,
+    forecast.instant_to_string,
   ))
   |> list.append(list_to_param_list(
     params.current,
     "current",
-    forecast.hourly_to_string,
+    forecast.instant_to_string,
   ))
   |> list.append(option_to_param_list(
     params.forecast_minutely_15,
