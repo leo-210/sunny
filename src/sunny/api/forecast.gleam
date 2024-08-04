@@ -174,6 +174,7 @@ fn make_request(
   client: client.Client,
   params: ForecastParams,
 ) -> Result(String, errors.SunnyError) {
+  use _ <- result.try(params |> check_params)
   utils.get_final_url(
     client.base_url,
     "",
@@ -187,6 +188,18 @@ fn make_request(
     utils.make_request(x)
   }
   |> result.map_error(fn(x) { errors.HttpError(x) })
+}
+
+fn check_params(params: ForecastParams) -> Result(Bool, errors.SunnyError) {
+  case params.positions {
+    [_, ..] -> Ok(True)
+    [] ->
+      Error(
+        errors.ApiError(errors.InvalidArgumentError(
+          "The positions list cannot be empty",
+        )),
+      )
+  }
 }
 
 // That took so long :')
