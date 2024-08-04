@@ -232,7 +232,12 @@ fn locations_from_json(
   |> result.map(fn(locations_maybe) {
     case locations_maybe {
       LocationList(option.Some(locations)) -> Ok(locations)
-      _ -> Error(errors.ApiError(errors.NoResults))
+      _ ->
+        Error(
+          errors.ApiError(errors.NoResultsError(
+            "Geocoding search gave no results",
+          )),
+        )
     }
   })
   |> result.flatten

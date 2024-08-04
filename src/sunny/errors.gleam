@@ -10,5 +10,6 @@ pub type SunnyError {
 }
 
 pub type ApiError {
-  NoResults
+  NoResultsError(msg: String)
+  InvalidArgumentError(msg: String)
 }
