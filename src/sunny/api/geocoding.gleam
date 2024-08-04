@@ -39,6 +39,7 @@ import sunny/client
 import sunny/errors
 import sunny/internal/client.{type Client, Client} as _
 import sunny/internal/utils
+import sunny/position
 
 /// Enumeration of the available languages for the geocoding API.
 /// Changing the language will impact the search results.
@@ -82,6 +83,11 @@ pub type Location {
     admin3_id: option.Option(Int),
     admin4_id: option.Option(Int),
   )
+}
+
+/// Converts a location to a position.
+pub fn location_to_position(location: Location) -> position.Position {
+  position.Position(location.latitude, location.longitude)
 }
 
 /// The different parameters needed to make a request to the geocoding API
@@ -166,7 +172,7 @@ fn geocoding_params_to_params_list(
     utils.RequestParameter("count", int.to_string(params.count)),
     utils.RequestParameter(
       "language",
-      language_to_country_code(params.language),
+      params.language |> language_to_country_code,
     ),
     utils.RequestParameter("format", "json"),
   ]
