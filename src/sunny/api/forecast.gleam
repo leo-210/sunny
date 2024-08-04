@@ -161,7 +161,7 @@ pub fn set_current(
   p: ForecastParams,
   c: List(current.CurrentVariable),
 ) -> ForecastParams {
-  ForecastParams(..p, hourly: c)
+  ForecastParams(..p, current: c)
 }
 
 pub fn get_forecast(
