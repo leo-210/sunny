@@ -1,10 +1,6 @@
-pub type WMOCode {
-  WMOCode(code: Int)
-}
-
 // See https://open-meteo.com/en/docs (at the bottom of the page).
-pub fn to_string(code: WMOCode) {
-  case code.code {
+pub fn to_string(code: Int) {
+  case code {
     0 -> "Clear sky"
 
     1 -> "Mainly clear"
