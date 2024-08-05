@@ -16,7 +16,7 @@ packages = [
 ]
 
 [requirements]
-birl = { version = ">= 1.7.1 and < 2.0.0"}
+birl = { version = ">= 1.7.1 and < 2.0.0" }
 efetch = { version = ">= 2.0.1 and < 3.0.0" }
 gleam_http = { version = ">= 3.6.0 and < 4.0.0" }
 gleam_json = { version = ">= 2.0.0 and < 3.0.0" }
