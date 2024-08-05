@@ -1,4 +1,5 @@
 import birl
+import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/io
@@ -11,6 +12,7 @@ import sunny/errors
 import sunny/internal/api/forecast
 import sunny/internal/client
 import sunny/internal/utils
+import sunny/measurement
 import sunny/position
 
 pub type TemperatureUnit {
@@ -67,17 +69,65 @@ fn cell_select_to_string(c: CellSelection) -> String {
   }
 }
 
+pub opaque type ForecastResult {
+  ForecastResult(
+    position: position.Position,
+    elevation: Float,
+    utc_offset_seconds: Int,
+    timezone: String,
+    timezone_abbreviation: String,
+    hourly: forecast.TimeRangedData,
+    daily: forecast.TimeRangedData,
+    minutely: forecast.TimeRangedData,
+    current: option.Option(forecast.CurrentData),
+  )
+}
+
+fn refine_raw_result(raw: forecast.RawForecastResult) -> ForecastResult {
+  ForecastResult(
+    position.Position(raw.latitude, raw.longitude),
+    raw.elevation,
+    raw.utc_offset_seconds,
+    raw.timezone,
+    raw.timezone_abbreviation,
+    refine_raw_time_ranged_data(raw.hourly, raw.hourly_units),
+    refine_raw_time_ranged_data(raw.daily, raw.daily_units),
+    refine_raw_time_ranged_data(raw.minutely, raw.minutely_units),
+    refine_raw_current_data(raw.current, raw.current_units),
+  )
+}
+
+fn refine_raw_time_ranged_data(
+  data: option.Option(dict.Dict(String, List(String))),
+  data_units: option.Option(dict.Dict(String, String)),
+) -> forecast.TimeRangedData {
+  todo
+}
+
+fn refine_raw_current_data(
+  data: option.Option(dict.Dict(String, String)),
+  data_units: option.Option(dict.Dict(String, String)),
+) -> option.Option(forecast.CurrentData) {
+  todo
+}
+
 pub type ForecastParams {
+  /// The different parameters available on the Forecast API
+  /// 
+  /// See <https://open-meteo.com/en/docs>
   ForecastParams(
-    positions: List(position.Position),
+    // TODO: Support multiple positions in one call
+    position: position.Position,
     hourly: List(instant.InstantVariable),
     daily: List(daily.DailyVariable),
+    /// Get data every 15 minutes. Some data can't be optained every 15
+    /// minutes, so it will be interpolated over the hour (or more if needed)
     minutely: List(instant.InstantVariable),
     current: List(instant.InstantVariable),
     temperature_unit: TemperatureUnit,
     wind_speed_unit: WindSpeedUnit,
     precipitation_unit: PrecipitationUnit,
-    /// Full list here : https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List
+    /// Full list here : <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List>
     /// 
     /// You can set `timezone` to `auto`, and the API will deduce the local 
     /// timezone from the coordinates.
@@ -103,9 +153,9 @@ pub type ForecastParams {
 }
 
 /// Creates a new ForecastParams with the default values
-pub fn params(positions: List(position.Position)) -> ForecastParams {
+pub fn params(position: position.Position) -> ForecastParams {
   ForecastParams(
-    positions,
+    position,
     [],
     [],
     [],
@@ -138,7 +188,7 @@ pub fn set_hourly(
   ForecastParams(..p, hourly: h)
 }
 
-/// Returns a new ForecastParams with the specified hourly list
+/// Returns a new ForecastParams with the specified daily list
 pub fn set_daily(
   p: ForecastParams,
   d: List(daily.DailyVariable),
@@ -146,7 +196,7 @@ pub fn set_daily(
   ForecastParams(..p, daily: d)
 }
 
-/// Returns a new ForecastParams with the specified hourly list
+/// Returns a new ForecastParams with the specified 15-minutely list
 pub fn set_minutely(
   p: ForecastParams,
   m: List(instant.InstantVariable),
@@ -191,15 +241,8 @@ fn make_request(
 }
 
 fn check_params(params: ForecastParams) -> Result(Bool, errors.SunnyError) {
-  case params.positions {
-    [_, ..] -> Ok(True)
-    [] ->
-      Error(
-        errors.ApiError(errors.InvalidArgumentError(
-          "The positions list cannot be empty",
-        )),
-      )
-  }
+  // TODO: check a bit more
+  Ok(True)
 }
 
 // That took so long :')
@@ -275,15 +318,11 @@ fn forecast_params_to_params_list(
   |> list.append([
     utils.RequestParameter(
       "latitude",
-      params.positions
-        |> list.map(fn(p) { p.latitude })
-        |> utils.param_list_to_string(float.to_string),
+      params.position.latitude |> float.to_string,
     ),
     utils.RequestParameter(
       "longitude",
-      params.positions
-        |> list.map(fn(p) { p.longitude })
-        |> utils.param_list_to_string(float.to_string),
+      params.position.longitude |> float.to_string,
     ),
     utils.RequestParameter(
       "temperature_unit",
