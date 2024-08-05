@@ -1,3 +1,5 @@
+import gleam/float
+import gleam/io
 import sunny
 import sunny/api/geocoding
 
@@ -7,10 +9,13 @@ pub fn main() {
   let sunny = sunny.new()
 
   let assert Ok(location) =
-    geocoding.get_first_location(sunny, {
+    sunny
+    // If the location your searching for isn't the first result, try 
+    // `geocoding.get_locations`
+    |> geocoding.get_first_location(
       geocoding.params("marseille")
-      |> geocoding.set_language(geocoding.French)
-    })
+      |> geocoding.set_language(geocoding.French),
+    )
 
   io.println(
     location.name
