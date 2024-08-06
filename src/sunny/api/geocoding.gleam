@@ -106,10 +106,7 @@ pub fn get_first_location(
   client: Client,
   params: GeocodingParams,
 ) -> Result(Location, errors.SunnyError) {
-  // Ok because the count is between 0 and 100.
-  let assert Ok(params) = set_count(params, 1)
-
-  use locations <- result.try(get_locations(client, params))
+  use locations <- result.try(get_locations(client, set_count(params, 1)))
   case locations {
     [head, ..] -> Ok(head)
     // Shouldn't happen because an error would be returned by `get_locations`
@@ -134,19 +131,9 @@ pub fn params(name: String) -> GeocodingParams {
 /// Creates a new GeocodingParams from the one specified, changing its count
 /// field.
 /// 
-/// The count must be between 1 and 100. If it is out of bounds, an error will
-/// be returned.
-pub fn set_count(
-  params: GeocodingParams,
-  count: Int,
-) -> Result(GeocodingParams, errors.ApiError) {
-  case count {
-    count if count > 100 || count < 1 ->
-      Error(errors.InvalidArgumentError(
-        "Geocoding parameter count must be between 1 and 100.",
-      ))
-    _ -> Ok(GeocodingParams(..params, count: count))
-  }
+/// The count will be clamped between 1 and 100.
+pub fn set_count(params: GeocodingParams, count: Int) -> GeocodingParams {
+  GeocodingParams(..params, count: int.clamp(count, 1, 100))
 }
 
 /// Creates a new GeocodingParams from the one specified, changing its language
@@ -162,6 +149,11 @@ fn make_request(
   client: Client,
   params: GeocodingParams,
 ) -> Result(List(Location), errors.SunnyError) {
+  let params = case params.count {
+    c if c > 100 || c < 1 -> set_count(params, c)
+    _ -> params
+  }
+
   case
     utils.get_final_url(
       client.base_url,

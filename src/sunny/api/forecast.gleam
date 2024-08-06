@@ -168,11 +168,17 @@ pub type ForecastParams {
     /// For abbreviations, in my experience only three letter ones work 
     /// (e.g. `CEST` returns an error).
     timezone: String,
+    /// Will be clamped between 0 and 92.
     past_days: Int,
+    /// Will be clamped between 0 and 16.
     forecast_days: Int,
+    /// If `forecast_hours` is negative or null, it will be set to `option.None`.
     forecast_hours: option.Option(Int),
+    /// If `forecast_minutely_15` is negative or null, it will be set to `option.None`.
     forecast_minutely_15: option.Option(Int),
+    /// If `past_hours` is negative or null, it will be set to `option.None`.
     past_hours: option.Option(Int),
+    /// If `past_minutely_15` is negative or null, it will be set to `option.None`.
     past_minutely_15: option.Option(Int),
     start_date: option.Option(birl.Time),
     end_date: option.Option(birl.Time),
@@ -251,48 +257,77 @@ pub fn set_timezone(params: ForecastParams, timezone: String) -> ForecastParams 
 }
 
 /// Returns a new ForecastParams with the specified forecast days.
+/// 
+/// `forecast_days` will be clamped between 0 and 16.
 pub fn set_forecast_days(
   params: ForecastParams,
   forecast_days: Int,
 ) -> ForecastParams {
-  ForecastParams(..params, forecast_days: forecast_days)
+  ForecastParams(..params, forecast_days: int.clamp(forecast_days, 0, 16))
 }
 
 /// Returns a new ForecastParams with the specified past days.
+/// 
+/// `past_days` will be clamped between 0 and 92.
 pub fn set_past_days(params: ForecastParams, past_days: Int) -> ForecastParams {
-  ForecastParams(..params, past_days: past_days)
+  ForecastParams(..params, past_days: int.clamp(past_days, 0, 95))
 }
 
 /// Returns a new ForecastParams with the specified forecast hours.
+/// 
+/// If `forecast_hours` is negative or null, it will be set to `option.None`.
 pub fn set_forecast_hours(
   params: ForecastParams,
   forecast_hours: Int,
 ) -> ForecastParams {
-  ForecastParams(..params, forecast_hours: option.Some(forecast_hours))
+  case forecast_hours {
+    _ if forecast_hours <= 0 ->
+      ForecastParams(..params, forecast_hours: option.None)
+    _ -> ForecastParams(..params, forecast_hours: option.Some(forecast_hours))
+  }
 }
 
 /// Returns a new ForecastParams with the specified forecast minutely 15.
+/// 
+/// If `forecast_minutely_15` is negative or null, it will be set to `option.None`.
 pub fn set_forecast_minutely_15(
   params: ForecastParams,
   forecast_minutely_15: Int,
 ) -> ForecastParams {
-  ForecastParams(
-    ..params,
-    forecast_minutely_15: option.Some(forecast_minutely_15),
-  )
+  case forecast_minutely_15 {
+    _ if forecast_minutely_15 <= 0 ->
+      ForecastParams(..params, forecast_minutely_15: option.None)
+    _ ->
+      ForecastParams(
+        ..params,
+        forecast_minutely_15: option.Some(forecast_minutely_15),
+      )
+  }
 }
 
 /// Returns a new ForecastParams with the specified past hours.
+/// 
+/// If `past_hours` is negative or null, it will be set to `option.None`.
 pub fn set_past_hours(params: ForecastParams, past_hours: Int) -> ForecastParams {
-  ForecastParams(..params, forecast_hours: option.Some(past_hours))
+  case past_hours {
+    _ if past_hours <= 0 -> ForecastParams(..params, past_hours: option.None)
+    _ -> ForecastParams(..params, past_hours: option.Some(past_hours))
+  }
 }
 
 /// Returns a new ForecastParams with the specified past minutely 15.
+/// 
+/// If `past_minutely_15` is negative or null, it will be set to `option.None`.
 pub fn set_past_minutely_15(
   params: ForecastParams,
   past_minutely_15: Int,
 ) -> ForecastParams {
-  ForecastParams(..params, forecast_minutely_15: option.Some(past_minutely_15))
+  case past_minutely_15 {
+    _ if past_minutely_15 <= 0 ->
+      ForecastParams(..params, past_minutely_15: option.None)
+    _ ->
+      ForecastParams(..params, past_minutely_15: option.Some(past_minutely_15))
+  }
 }
 
 /// Returns a new ForecastParams with the specified start date.
@@ -437,7 +472,7 @@ fn make_request(
   client: client.Client,
   params: ForecastParams,
 ) -> Result(ForecastResult, errors.SunnyError) {
-  let params = unify_params(params)
+  let params = verify_params(params)
 
   use json_string <- result.try(
     utils.get_final_url(
@@ -459,7 +494,7 @@ fn make_request(
   |> result.map_error(fn(e) { errors.SunnyInternalError(e) })
 }
 
-fn unify_params(params: ForecastParams) -> ForecastParams {
+fn verify_params(params: ForecastParams) -> ForecastParams {
   ForecastParams(
     ..params,
     hourly: list.unique(params.hourly),
@@ -467,6 +502,23 @@ fn unify_params(params: ForecastParams) -> ForecastParams {
     minutely: list.unique(params.minutely),
     current: list.unique(params.current),
   )
+  |> set_past_days(params.past_days)
+  |> set_forecast_days(params.forecast_days)
+  |> set_if_some(params.forecast_hours, set_forecast_hours)
+  |> set_if_some(params.forecast_minutely_15, set_forecast_minutely_15)
+  |> set_if_some(params.past_hours, set_past_hours)
+  |> set_if_some(params.past_minutely_15, set_past_minutely_15)
+}
+
+fn set_if_some(
+  params: ForecastParams,
+  opt: option.Option(a),
+  func: fn(ForecastParams, a) -> ForecastParams,
+) -> ForecastParams {
+  case opt {
+    option.Some(x) -> func(params, x)
+    option.None -> params
+  }
 }
 
 fn forecast_params_to_params_list(
