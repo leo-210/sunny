@@ -1,8 +1,8 @@
 import birl
+import gleam/set
 
 import gleam/float
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/option
 import gleam/result
@@ -197,7 +197,8 @@ fn make_request(
   client: client.Client,
   params: ForecastParams,
 ) -> Result(ForecastResult, errors.SunnyError) {
-  // use _ <- result.try(params |> check_params)
+  let params = unify_params(params)
+
   use json_string <- result.try(
     utils.get_final_url(
       client.base_url,
@@ -218,8 +219,14 @@ fn make_request(
   |> result.map_error(fn(e) { errors.SunnyInternalError(e) })
 }
 
-fn check_params(params: ForecastParams) -> Result(Bool, errors.SunnyError) {
-  todo
+fn unify_params(params: ForecastParams) -> ForecastParams {
+  ForecastParams(
+    ..params,
+    hourly: set.to_list(set.from_list(params.hourly)),
+    daily: set.to_list(set.from_list(params.daily)),
+    minutely: set.to_list(set.from_list(params.minutely)),
+    current: set.to_list(set.from_list(params.current)),
+  )
 }
 
 fn forecast_params_to_params_list(
