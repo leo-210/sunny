@@ -1,18 +1,20 @@
 import birl
-import gleam/dict
+import gleam/json
+
 import gleam/float
 import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option
 import gleam/result
+
 import sunny/api/forecast/daily
+import sunny/api/forecast/data
 import sunny/api/forecast/instant
 import sunny/errors
 import sunny/internal/api/forecast
 import sunny/internal/client
 import sunny/internal/utils
-import sunny/measurement
 import sunny/position
 
 pub type TemperatureUnit {
@@ -76,39 +78,11 @@ pub opaque type ForecastResult {
     utc_offset_seconds: Int,
     timezone: String,
     timezone_abbreviation: String,
-    hourly: forecast.TimeRangedData,
-    daily: forecast.TimeRangedData,
-    minutely: forecast.TimeRangedData,
-    current: option.Option(forecast.CurrentData),
+    hourly: data.TimeRangedData(instant.InstantVariable),
+    daily: data.TimeRangedData(daily.DailyVariable),
+    minutely: data.TimeRangedData(instant.InstantVariable),
+    current: option.Option(data.CurrentData(instant.InstantVariable)),
   )
-}
-
-fn refine_raw_result(raw: forecast.RawForecastResult) -> ForecastResult {
-  ForecastResult(
-    position.Position(raw.latitude, raw.longitude),
-    raw.elevation,
-    raw.utc_offset_seconds,
-    raw.timezone,
-    raw.timezone_abbreviation,
-    refine_raw_time_ranged_data(raw.hourly, raw.hourly_units),
-    refine_raw_time_ranged_data(raw.daily, raw.daily_units),
-    refine_raw_time_ranged_data(raw.minutely, raw.minutely_units),
-    refine_raw_current_data(raw.current, raw.current_units),
-  )
-}
-
-fn refine_raw_time_ranged_data(
-  data: option.Option(dict.Dict(String, List(String))),
-  data_units: option.Option(dict.Dict(String, String)),
-) -> forecast.TimeRangedData {
-  todo
-}
-
-fn refine_raw_current_data(
-  data: option.Option(dict.Dict(String, String)),
-  data_units: option.Option(dict.Dict(String, String)),
-) -> option.Option(forecast.CurrentData) {
-  todo
 }
 
 pub type ForecastParams {
@@ -215,7 +189,7 @@ pub fn set_current(
 pub fn get_forecast(
   client: client.Client,
   params: ForecastParams,
-) -> Result(String, errors.SunnyError) {
+) -> Result(ForecastResult, errors.SunnyError) {
   make_request(client, params)
 }
 
@@ -223,26 +197,33 @@ pub fn get_forecast(
 fn make_request(
   client: client.Client,
   params: ForecastParams,
-) -> Result(String, errors.SunnyError) {
+) -> Result(ForecastResult, errors.SunnyError) {
   use _ <- result.try(params |> check_params)
-  utils.get_final_url(
-    client.base_url,
-    "",
-    client.commercial,
-    "/forecast",
-    client.key,
-    params |> forecast_params_to_params_list,
+  use json_string <- result.try(
+    utils.get_final_url(
+      client.base_url,
+      "",
+      client.commercial,
+      "/forecast",
+      client.key,
+      params |> forecast_params_to_params_list,
+    )
+    |> fn(x) {
+      io.println(x)
+      utils.make_request(x)
+    }
+    |> result.map_error(fn(x) { errors.HttpError(x) }),
   )
-  |> fn(x) {
-    io.println(x)
-    utils.make_request(x)
-  }
-  |> result.map_error(fn(x) { errors.HttpError(x) })
+  use raw_result <- result.try(forecast.raw_forecast_result_from_json(
+    json_string,
+  ))
+  raw_result
+  |> refine_raw_result()
+  |> result.map_error(fn(e) { errors.SunnyInternalError(e) })
 }
 
 fn check_params(params: ForecastParams) -> Result(Bool, errors.SunnyError) {
-  // TODO: check a bit more
-  Ok(True)
+  todo
 }
 
 // That took so long :')
@@ -373,4 +354,40 @@ fn list_to_param_list(
     ]
     [] -> []
   }
+}
+
+fn refine_raw_result(
+  raw: forecast.RawForecastResult,
+) -> Result(ForecastResult, errors.InternalError) {
+  use hourly <- result.try(forecast.refine_raw_time_ranged_data(
+    raw.hourly,
+    raw.hourly_units,
+    forecast.string_to_instant,
+  ))
+  use daily <- result.try(forecast.refine_raw_time_ranged_data(
+    raw.daily,
+    raw.daily_units,
+    forecast.string_to_daily,
+  ))
+  use minutely <- result.try(forecast.refine_raw_time_ranged_data(
+    raw.minutely,
+    raw.minutely_units,
+    forecast.string_to_instant,
+  ))
+  use current <- result.try(forecast.refine_raw_current_data(
+    raw.current,
+    raw.current_units,
+    forecast.string_to_instant,
+  ))
+  Ok(ForecastResult(
+    position.Position(raw.latitude, raw.longitude),
+    raw.elevation,
+    raw.utc_offset_seconds,
+    raw.timezone,
+    raw.timezone_abbreviation,
+    hourly,
+    daily,
+    minutely,
+    current,
+  ))
 }

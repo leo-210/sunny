@@ -1,36 +1,83 @@
 import birl
 import gleam/dict
+import gleam/list
 import gleam/result
-import sunny/api/forecast/daily
-import sunny/api/forecast/instant
 import sunny/errors
-import sunny/internal/api/forecast as int_forecast
 import sunny/measurement
 
-pub fn get_instant_var(
-  from data: int_forecast.TimeRangedData,
-  get var: instant.InstantVariable,
-) -> Result(dict.Dict(birl.Time, measurement.Measurement), errors.DataError) {
+/// Data over a time range.
+pub type TimeRangedData(data_type) {
+  TimeRangedData(
+    /// A list of `birl.Time`, with each index corresponding to the index of
+    /// the `data` argument.
+    /// 
+    /// For example, `list.first(time)` is the time when the first measurement
+    /// was taken
+    time: List(birl.Time),
+    data: dict.Dict(data_type, List(measurement.Measurement)),
+  )
+}
+
+/// Data at a specific time.
+pub type CurrentData(data_type) {
+  CurrentData(
+    time: birl.Time,
+    data: dict.Dict(data_type, measurement.Measurement),
+  )
+}
+
+/// A measurement at a specific time.
+/// 
+/// Similar to `CurrentData` but with only one `Measurement`.
+pub type Data {
+  Data(time: birl.Time, data: measurement.Measurement)
+}
+
+pub fn get_range_var(
+  from data: TimeRangedData(a),
+  get var: a,
+) -> Result(List(measurement.Measurement), errors.DataError) {
   data.data
-  |> dict.get(int_forecast.instant_to_string(var))
+  |> dict.get(var)
   |> result.map_error(fn(_) {
-    errors.DataNotFoundError(
-      "Could not find `" <> int_forecast.instant_to_string(var) <> "`.",
-    )
+    errors.DataNotFoundError("Could not find variable in data.")
   })
 }
 
-pub fn get_daily_var(
-  from data: int_forecast.TimeRangedData,
-  get var: daily.DailyVariable,
-) -> Result(dict.Dict(birl.Time, measurement.Measurement), errors.DataError) {
-  data.data
-  |> dict.get(int_forecast.daily_to_string(var))
-  |> result.map_error(fn(_) {
-    errors.DataNotFoundError(
-      "Could not find `"
-      <> int_forecast.daily_to_string(var)
-      <> "` variable in data.",
-    )
-  })
+pub fn range_to_current(
+  from data: TimeRangedData(a),
+  at time: birl.Time,
+) -> Result(CurrentData(a), errors.DataError) {
+  todo
+}
+
+pub fn range_to_data_list(
+  from data: TimeRangedData(a),
+  get var: a,
+) -> Result(List(Data), errors.SunnyError) {
+  use l <- result.try(
+    get_range_var(data, var) |> result.map_error(fn(e) { errors.DataError(e) }),
+  )
+  do_range_to_data_list(data.time, l, [])
+  |> result.map_error(fn(e) { errors.SunnyInternalError(e) })
+}
+
+fn do_range_to_data_list(
+  time: List(birl.Time),
+  l: List(measurement.Measurement),
+  result: List(Data),
+) -> Result(List(Data), errors.InternalError) {
+  case time, l {
+    [], [] -> Ok(result)
+    [t, ..t_tail], [m, ..m_tail] ->
+      result
+      // This could, maybe, be optimized, by appending in the other way.
+      |> list.append([Data(t, m)])
+      |> do_range_to_data_list(t_tail, m_tail, _)
+    _, _ ->
+      // Should not happen because the two lists should have the same length.
+      Error(errors.InternalError(
+        "Please open an issue on Github if you encountered this error.",
+      ))
+  }
 }
