@@ -167,9 +167,9 @@ pub fn daily_to_string(d: daily.DailyVariable) -> String {
     daily.PrecipitationProbabilityMin -> "precipitation_probability_min"
     daily.PrecipitationProbabilityMean -> "precipitation_probability_mean"
     daily.WorstWeatherCode -> "weather_code"
-    daily.Sunrise -> "sunrise"
-    daily.Sunset -> "sunset"
-    daily.SunshineSuration -> "sunlight_duration"
+    //daily.Sunrise -> "sunrise"
+    //daily.Sunset -> "sunset"
+    daily.SunshineSuration -> "sunshine_duration"
     daily.DaylightDuration -> "daylight_duration"
     daily.WindSpeed10mMax -> "wind_speed_10m_max"
     daily.WindGusts10mMax -> "wind_gusts_10m_max"
@@ -195,9 +195,9 @@ pub fn string_to_daily(
     "precipitation_probability_mean" ->
       daily.PrecipitationProbabilityMean |> Ok()
     "weather_code" -> daily.WorstWeatherCode |> Ok()
-    "sunrise" -> daily.Sunrise |> Ok()
-    "sunset" -> daily.Sunset |> Ok()
-    "sunlight_duration" -> daily.SunshineSuration |> Ok()
+    //"sunrise" -> daily.Sunrise |> Ok()
+    //"sunset" -> daily.Sunset |> Ok()
+    "sunshine_duration" -> daily.SunshineSuration |> Ok()
     "daylight_duration" -> daily.DaylightDuration |> Ok()
     "wind_speed_10m_max" -> daily.WindSpeed10mMax |> Ok()
     "wind_gusts_10m_max" -> daily.WindGusts10mMax |> Ok()
@@ -238,6 +238,7 @@ pub fn refine_raw_time_ranged_data(
       case
         list.all(dict.to_list(data), fn(tuple) {
           let #(k, v) = tuple
+          io.debug(tuple)
 
           case from_string_fn(k) {
             Ok(_) -> True

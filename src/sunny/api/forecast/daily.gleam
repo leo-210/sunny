@@ -15,8 +15,9 @@ pub type DailyVariable {
   PrecipitationProbabilityMin
   PrecipitationProbabilityMean
   WorstWeatherCode
-  Sunrise
-  Sunset
+  // TODO: Implemeny `Sunrise` and `Sunset` variables (they're problematic because they're not integers nor floats, but dates.) 
+  // Sunrise
+  // Sunset
   SunshineSuration
   DaylightDuration
   WindSpeed10mMax
@@ -28,7 +29,6 @@ pub const all = [
   MaximumTemperature2m, MinimumTemperature2m, ApparentTemperatureMax,
   ApparentTemperatureMin, PrecipitationSum, RainSum, ShowersSum, SnowfallSum,
   PrecipitationHours, PrecipitationProbabilityMax, PrecipitationProbabilityMin,
-  PrecipitationProbabilityMean, WorstWeatherCode, Sunrise, Sunset,
-  SunshineSuration, DaylightDuration, WindSpeed10mMax, WindGusts10mMax,
-  WindDirection10mDominant,
+  PrecipitationProbabilityMean, WorstWeatherCode, SunshineSuration,
+  DaylightDuration, WindSpeed10mMax, WindGusts10mMax, WindDirection10mDominant,
 ]
