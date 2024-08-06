@@ -1,7 +1,6 @@
+import glacier
+import glacier/should
 import gleam/dict
-import gleam/io
-import gleeunit
-import gleeunit/should
 import sunny
 import sunny/api/forecast
 import sunny/api/forecast/instant
@@ -9,7 +8,7 @@ import sunny/api/geocoding
 import sunny/measurement
 
 pub fn main() {
-  gleeunit.main()
+  glacier.main()
 }
 
 pub fn geocoding_and_forecast_test() {
@@ -37,10 +36,6 @@ pub fn geocoding_and_forecast_test() {
     current.data
     |> dict.get(instant.Temperature2m)
     |> should.be_ok
-
-  io.println(
-    "Marseille's actual temperature : " <> measurement.to_string(temperature),
-  )
 
   current.data
   |> dict.get(instant.ApparentTemperature)
