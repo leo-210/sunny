@@ -1,8 +1,11 @@
 import efetch
 import gleam/dynamic.{type DecodeError, type Decoder, type Dynamic}
+import gleam/float
 import gleam/http/request
+import gleam/int
 import gleam/list
 import gleam/result.{try}
+import gleam/string
 
 pub fn make_request(url: String) -> Result(String, efetch.HttpError) {
   let assert Ok(request) = request.to(url)
@@ -41,8 +44,25 @@ pub fn get_final_url(
   <> "?"
   <> list.fold(params, "", fn(a, b) { a <> b.key <> "=" <> b.value <> "&" })
   <> case commercial {
-    True -> "apikey" <> "=" <> apikey
+    True -> "&apikey" <> "=" <> apikey
     False -> ""
+  }
+}
+
+pub fn param_list_to_string(
+  params: List(a),
+  to_string_fn: fn(a) -> String,
+) -> String {
+  params
+  |> list.fold("", fn(a, b) { a <> to_string_fn(b) <> "," })
+  |> string.drop_right(1)
+}
+
+pub fn parse_float_or_int(s: String) -> Result(Float, Nil) {
+  let res = int.parse(s)
+  case res {
+    Ok(i) -> Ok(int.to_float(i))
+    Error(_) -> float.parse(s)
   }
 }
 
@@ -55,6 +75,80 @@ fn all_errors(result: Result(a, List(DecodeError))) -> List(DecodeError) {
 }
 
 // Adapted from gleam/dynamic source code
+
+pub fn decode14(
+  constructor: fn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14) ->
+    t,
+  t1: Decoder(t1),
+  t2: Decoder(t2),
+  t3: Decoder(t3),
+  t4: Decoder(t4),
+  t5: Decoder(t5),
+  t6: Decoder(t6),
+  t7: Decoder(t7),
+  t8: Decoder(t8),
+  t9: Decoder(t9),
+  t10: Decoder(t10),
+  t11: Decoder(t11),
+  t12: Decoder(t12),
+  t13: Decoder(t13),
+  t14: Decoder(t14),
+) -> Decoder(t) {
+  fn(x: Dynamic) {
+    case
+      t1(x),
+      t2(x),
+      t3(x),
+      t4(x),
+      t5(x),
+      t6(x),
+      t7(x),
+      t8(x),
+      t9(x),
+      t10(x),
+      t11(x),
+      t12(x),
+      t13(x),
+      t14(x)
+    {
+      Ok(a),
+        Ok(b),
+        Ok(c),
+        Ok(d),
+        Ok(e),
+        Ok(f),
+        Ok(g),
+        Ok(h),
+        Ok(i),
+        Ok(j),
+        Ok(k),
+        Ok(l),
+        Ok(m),
+        Ok(n)
+      -> Ok(constructor(a, b, c, d, e, f, g, h, i, j, k, l, m, n))
+      a, b, c, d, e, f, g, h, i, j, k, l, m, n ->
+        Error(
+          list.concat([
+            all_errors(a),
+            all_errors(b),
+            all_errors(c),
+            all_errors(d),
+            all_errors(e),
+            all_errors(f),
+            all_errors(g),
+            all_errors(h),
+            all_errors(i),
+            all_errors(j),
+            all_errors(k),
+            all_errors(l),
+            all_errors(m),
+            all_errors(n),
+          ]),
+        )
+    }
+  }
+}
+
 pub fn decode18(
   constructor: fn(
     t1,

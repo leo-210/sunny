@@ -1,4 +1,4 @@
-# 🌤️ Sunny (WIP)
+# 🌤️ Sunny
 
 An [Open-meteo API](https://open-meteo.com/) client written in Gleam. 
 
@@ -12,44 +12,64 @@ Makes it easier to get weather forecasts, current and past weather data with dif
 Add this package to your gleam project (not online yet)
 
 ```sh
-gleam add sunny@1
+gleam add sunny
 ```
 
-### Getting the coordinates of a city
+### Getting the current temperature in a city
+<details open>
+  <summary>Example code</summary>
+
 ```gleam
+import gleam/dict
+import gleam/io
+import gleam/option
+
 import sunny
+import sunny/api/forecast
+import sunny/api/forecast/instant
 import sunny/api/geocoding
+import sunny/measurement
 
 pub fn main() {
-  // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
-  // API access 
   let sunny = sunny.new()
 
   let assert Ok(location) =
-    geocoding.get_first_location(sunny, {
+    sunny
+    |> geocoding.get_first_location(
       geocoding.params("marseille")
-      |> geocoding.set_language(geocoding.French)
-    })
+      |> geocoding.set_language(geocoding.French),
+    )
+
+  let assert Ok(forecast_result) =
+    sunny
+    |> forecast.get_forecast(
+      forecast.params(geocoding.location_to_position(location))
+      |> forecast.set_current([instant.Temperature2m]),
+    )
+
+  let assert option.Some(current_data) = forecast_result.current
+
+  let assert Ok(temperature) =
+    current_data.data |> dict.get(instant.Temperature2m)
 
   io.println(
     location.name
-    <> " is located at :\n"
-    <> float.to_string(location.latitude)
-    <> "\n"
-    <> float.to_string(location.longitude),
+    <> "'s current temperature is : "
+    <> measurement.to_string(temperature),
   )
 }
 ```
+</details>
+
+More examples in the `test/examples` directory
 
 Further documentation can be found at <https://hexdocs.pm/sunny>.
 
 
 ## Contributing
 
-The project is open for contributions ! Make a fork, and once you made the changes you wanted, make a PR.
+Contributions are very welcome ! Make a fork, and once you made the changes you wanted, make a PR.
 
 ### Todo 
-- Weather forecast API
 - Historical forecast API
 - Air quality API
-- Make tests to make sure nothing is breaking

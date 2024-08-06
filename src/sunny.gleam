@@ -5,15 +5,17 @@ import sunny/internal/defaults
 /// need anything more).
 /// 
 /// If you have a commercial Open-meteo API acess, check out `new_commercial`.
-/// 
-/// To change some client parameters (such as the base url), check out the
-/// `sunny/client` module.
 pub fn new() -> Client {
   Client(defaults.base_url, False, "")
 }
 
-/// Creates a new commercial Open-meteo client with the default values
+/// Creates a new commercial Open-meteo client with the default values.
 /// Takes your Open-meteo api key as an argument.
 pub fn new_commercial(key: String) -> Client {
   Client(defaults.base_url, True, key)
+}
+
+/// Takes a Client and returns a new one with a custom base url.
+pub fn set_base_url(client: Client, url: String) -> Client {
+  Client(..client, base_url: url)
 }

@@ -1,8 +1,8 @@
-//// The module for interacting with the Geocoding API.
-//// Useful for getting the coordinates of a city to then get the weather 
-//// forecast.
+//// The module for interacting with the Geocoding API. Useful for getting the
+//// coordinates of a city to then get the weather forecast.
 //// 
-//// ### Example
+//// ## Example
+//// 
 //// ```gleam
 //// import sunny
 //// import sunny/api/geocoding
@@ -13,10 +13,11 @@
 ////   let sunny = sunny.new()
 //// 
 ////   let assert Ok(location) =
-////     geocoding.get_first_location(sunny, {
+////     sunny
+////     |> geocoding.get_first_location(
 ////       geocoding.params("marseille")
 ////       |> geocoding.set_language(geocoding.French)
-////     })
+////     )
 //// 
 ////   io.println(
 ////     location.name
@@ -26,7 +27,7 @@
 ////     <> float.to_string(location.longitude),
 ////   )
 //// }
-//// ```gleam
+//// ```
 
 import gleam/dict
 import gleam/dynamic.{dict, field, float, int, list, optional_field, string}
@@ -35,10 +36,10 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
-import sunny/client
 import sunny/errors
 import sunny/internal/client.{type Client, Client} as _
 import sunny/internal/utils
+import sunny/position
 
 /// Enumeration of the available languages for the geocoding API.
 /// Changing the language will impact the search results.
@@ -56,12 +57,9 @@ pub type Language {
 
 /// Represents a location on good old earth. Can be obtained with the geocoding
 /// API.
+/// 
+/// See <https://open-meteo.com/en/docs/geocoding-api>
 pub type Location {
-  /// See https://open-meteo.com/en/docs/geocoding-api for more information
-  /// on the fields.
-  /// 
-  /// If you want to use specific coordinates, use the `Coordinates` 
-  /// constructor.
   Location(
     latitude: Float,
     longitude: Float,
@@ -71,8 +69,8 @@ pub type Location {
     feature_code: String,
     country_code: String,
     country_id: Int,
-    population: Int,
-    post_codes: List(String),
+    population: option.Option(Int),
+    post_codes: option.Option(List(String)),
     admin1: option.Option(String),
     admin2: option.Option(String),
     admin3: option.Option(String),
@@ -84,6 +82,11 @@ pub type Location {
   )
 }
 
+/// Converts a location to a position.
+pub fn location_to_position(location: Location) -> position.Position {
+  position.Position(location.latitude, location.longitude)
+}
+
 /// The different parameters needed to make a request to the geocoding API
 pub type GeocodingParams {
   GeocodingParams(name: String, count: Int, language: Language)
@@ -93,7 +96,7 @@ pub type GeocodingParams {
 pub fn get_locations(
   client: Client,
   params: GeocodingParams,
-) -> Result(List(Location), errors.OMApiError) {
+) -> Result(List(Location), errors.SunnyError) {
   make_request(client, params)
 }
 
@@ -102,12 +105,17 @@ pub fn get_locations(
 pub fn get_first_location(
   client: Client,
   params: GeocodingParams,
-) -> Result(Location, errors.OMApiError) {
+) -> Result(Location, errors.SunnyError) {
   use locations <- result.try(get_locations(client, set_count(params, 1)))
   case locations {
     [head, ..] -> Ok(head)
     // Shouldn't happen because an error would be returned by `get_locations`
-    [] -> panic as "`get_locations` gave empty list instead of error."
+    [] ->
+      Error(
+        errors.SunnyInternalError(errors.InternalError(
+          "`get_locations` gave empty list instead of error.",
+        )),
+      )
   }
 }
 
@@ -122,12 +130,10 @@ pub fn params(name: String) -> GeocodingParams {
 
 /// Creates a new GeocodingParams from the one specified, changing its count
 /// field.
+/// 
+/// The count will be clamped between 1 and 100.
 pub fn set_count(params: GeocodingParams, count: Int) -> GeocodingParams {
-  case count {
-    count if count > 100 || count < 1 ->
-      panic as "Geocoding parameter count must be between 1 and 100."
-    _ -> GeocodingParams(..params, count: count)
-  }
+  GeocodingParams(..params, count: int.clamp(count, 1, 100))
 }
 
 /// Creates a new GeocodingParams from the one specified, changing its language
@@ -142,16 +148,22 @@ pub fn set_language(
 fn make_request(
   client: Client,
   params: GeocodingParams,
-) -> Result(List(Location), errors.OMApiError) {
+) -> Result(List(Location), errors.SunnyError) {
+  let params = case params.count {
+    c if c > 100 || c < 1 -> set_count(params, c)
+    _ -> params
+  }
+
   case
-    utils.make_request(utils.get_final_url(
-      client.get_base_url(client),
+    utils.get_final_url(
+      client.base_url,
       "geocoding",
-      client.is_commercial(client),
+      client.commercial,
       "/search",
-      client.get_api_key(client),
-      geocoding_params_to_params_list(params),
-    ))
+      client.key,
+      params |> geocoding_params_to_params_list,
+    )
+    |> utils.make_request
   {
     Ok(body) -> locations_from_json(body)
     Error(err) -> Error(errors.HttpError(err))
@@ -166,7 +178,7 @@ fn geocoding_params_to_params_list(
     utils.RequestParameter("count", int.to_string(params.count)),
     utils.RequestParameter(
       "language",
-      language_to_country_code(params.language),
+      params.language |> language_to_country_code,
     ),
     utils.RequestParameter("format", "json"),
   ]
@@ -192,7 +204,7 @@ type LocationList {
 
 fn locations_from_json(
   json_string: String,
-) -> Result(List(Location), errors.OMApiError) {
+) -> Result(List(Location), errors.SunnyError) {
   let geocoding_decoder =
     dynamic.decode1(
       LocationList,
@@ -208,8 +220,8 @@ fn locations_from_json(
           field("feature_code", of: string),
           field("country_code", of: string),
           field("country_id", of: int),
-          field("population", of: int),
-          field("postcodes", of: list(string)),
+          optional_field("population", of: int),
+          optional_field("postcodes", of: list(string)),
           optional_field("admin1", of: string),
           optional_field("admin2", of: string),
           optional_field("admin3", of: string),
@@ -226,7 +238,12 @@ fn locations_from_json(
   |> result.map(fn(locations_maybe) {
     case locations_maybe {
       LocationList(option.Some(locations)) -> Ok(locations)
-      _ -> Error(errors.NoResults)
+      _ ->
+        Error(
+          errors.ApiError(errors.NoResultsError(
+            "Geocoding search gave no results",
+          )),
+        )
     }
   })
   |> result.flatten
