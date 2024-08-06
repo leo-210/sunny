@@ -5,7 +5,6 @@ import sunny
 import sunny/api/geocoding
 import sunny/errors
 
-// gleeunit test functions end in `_test`
 pub fn ok_result_test() {
   let sunny = sunny.new()
 
