@@ -153,7 +153,137 @@ pub fn params(position: position.Position) -> ForecastParams {
   )
 }
 
-/// Returns a new ForecastParams with the specified hourly list
+/// Returns a new ForecastParams with the specified temperature unit.
+pub fn set_temperature_unit(
+  params: ForecastParams,
+  unit: TemperatureUnit,
+) -> ForecastParams {
+  ForecastParams(..params, temperature_unit: unit)
+}
+
+/// Returns a new ForecastParams with the specified temperature unit.
+pub fn set_wind_speed_unit(
+  params: ForecastParams,
+  unit: WindSpeedUnit,
+) -> ForecastParams {
+  ForecastParams(..params, wind_speed_unit: unit)
+}
+
+/// Returns a new ForecastParams with the specified temperature unit.
+pub fn set_precipitation_unit(
+  params: ForecastParams,
+  unit: PrecipitationUnit,
+) -> ForecastParams {
+  ForecastParams(..params, precipitation_unit: unit)
+}
+
+/// Returns a new ForecastParams with the specified cell selection.
+pub fn set_cell_selection(
+  params: ForecastParams,
+  cell_selection: CellSelection,
+) -> ForecastParams {
+  ForecastParams(..params, cell_selection: cell_selection)
+}
+
+/// Returns a new ForecastParams with the specified timezone.
+pub fn set_timezone(params: ForecastParams, timezone: String) -> ForecastParams {
+  ForecastParams(..params, timezone: timezone)
+}
+
+/// Returns a new ForecastParams with the specified forecast days.
+pub fn set_forecast_days(
+  params: ForecastParams,
+  forecast_days: Int,
+) -> ForecastParams {
+  ForecastParams(..params, forecast_days: forecast_days)
+}
+
+/// Returns a new ForecastParams with the specified past days.
+pub fn set_past_days(params: ForecastParams, past_days: Int) -> ForecastParams {
+  ForecastParams(..params, past_days: past_days)
+}
+
+/// Returns a new ForecastParams with the specified forecast hours.
+pub fn set_forecast_hours(
+  params: ForecastParams,
+  forecast_hours: Int,
+) -> ForecastParams {
+  ForecastParams(..params, forecast_hours: option.Some(forecast_hours))
+}
+
+/// Returns a new ForecastParams with the specified forecast minutely 15.
+pub fn set_forecast_minutely_15(
+  params: ForecastParams,
+  forecast_minutely_15: Int,
+) -> ForecastParams {
+  ForecastParams(
+    ..params,
+    forecast_minutely_15: option.Some(forecast_minutely_15),
+  )
+}
+
+/// Returns a new ForecastParams with the specified past hours.
+pub fn set_past_hours(params: ForecastParams, past_hours: Int) -> ForecastParams {
+  ForecastParams(..params, forecast_hours: option.Some(past_hours))
+}
+
+/// Returns a new ForecastParams with the specified past minutely 15.
+pub fn set_past_minutely_15(
+  params: ForecastParams,
+  past_minutely_15: Int,
+) -> ForecastParams {
+  ForecastParams(..params, forecast_minutely_15: option.Some(past_minutely_15))
+}
+
+/// Returns a new ForecastParams with the specified start date.
+pub fn set_start_date(
+  params: ForecastParams,
+  start_date: birl.Time,
+) -> ForecastParams {
+  ForecastParams(..params, start_date: option.Some(start_date))
+}
+
+/// Returns a new ForecastParams with the specified end date.
+pub fn set_end_date(
+  params: ForecastParams,
+  end_date: birl.Time,
+) -> ForecastParams {
+  ForecastParams(..params, end_date: option.Some(end_date))
+}
+
+/// Returns a new ForecastParams with the specified start hour.
+pub fn set_start_hour(
+  params: ForecastParams,
+  start_hour: birl.Time,
+) -> ForecastParams {
+  ForecastParams(..params, start_hour: option.Some(start_hour))
+}
+
+/// Returns a new ForecastParams with the specified end hour.
+pub fn set_end_hour(
+  params: ForecastParams,
+  end_hour: birl.Time,
+) -> ForecastParams {
+  ForecastParams(..params, end_hour: option.Some(end_hour))
+}
+
+/// Returns a new ForecastParams with the specified start minutely 15.
+pub fn set_start_minutely_15(
+  params: ForecastParams,
+  start_minutely_15: birl.Time,
+) -> ForecastParams {
+  ForecastParams(..params, start_minutely_15: option.Some(start_minutely_15))
+}
+
+/// Returns a new ForecastParams with the specified end minutely 15.
+pub fn set_end_minutely_15(
+  params: ForecastParams,
+  end_minutely_15: birl.Time,
+) -> ForecastParams {
+  ForecastParams(..params, end_minutely_15: option.Some(end_minutely_15))
+}
+
+/// Returns a new ForecastParams with the specified hourly list.
 pub fn set_hourly(
   params: ForecastParams,
   hourly_list: List(instant.InstantVariable),
