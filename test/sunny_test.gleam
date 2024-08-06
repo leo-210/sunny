@@ -31,10 +31,9 @@ pub fn geocoding_and_forecast_test() {
     forecast_result.current
     |> should.be_some
 
-  let temperature =
-    current.data
-    |> dict.get(instant.Temperature2m)
-    |> should.be_ok
+  current.data
+  |> dict.get(instant.Temperature2m)
+  |> should.be_ok
 
   current.data
   |> dict.get(instant.ApparentTemperature)
