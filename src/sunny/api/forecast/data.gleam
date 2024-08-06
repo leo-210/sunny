@@ -35,7 +35,7 @@ pub type Data {
   Data(time: birl.Time, data: measurement.Measurement)
 }
 
-pub fn get_range_var(
+fn get_range_var(
   from data: TimeRangedData(a),
   get var: a,
 ) -> Result(List(measurement.Measurement), errors.DataError) {
