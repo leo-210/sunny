@@ -1,6 +1,8 @@
 import efetch
 import gleam/dynamic.{type DecodeError, type Decoder, type Dynamic}
+import gleam/float
 import gleam/http/request
+import gleam/int
 import gleam/list
 import gleam/result.{try}
 import gleam/string
@@ -54,6 +56,14 @@ pub fn param_list_to_string(
   params
   |> list.fold("", fn(a, b) { a <> to_string_fn(b) <> "," })
   |> string.drop_right(1)
+}
+
+pub fn parse_float_or_int(s: String) -> Result(Float, Nil) {
+  let res = int.parse(s)
+  case res {
+    Ok(i) -> Ok(int.to_float(i))
+    Error(_) -> float.parse(s)
+  }
 }
 
 // Taken from https://github.com/gleam-lang/stdlib/blob/v0.39.0/src/gleam/dynamic.gleam#L1530

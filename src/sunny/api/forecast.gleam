@@ -1,5 +1,4 @@
 import birl
-import gleam/json
 
 import gleam/float
 import gleam/int
@@ -71,7 +70,7 @@ fn cell_select_to_string(c: CellSelection) -> String {
   }
 }
 
-pub opaque type ForecastResult {
+pub type ForecastResult {
   ForecastResult(
     position: position.Position,
     elevation: Float,
@@ -198,7 +197,7 @@ fn make_request(
   client: client.Client,
   params: ForecastParams,
 ) -> Result(ForecastResult, errors.SunnyError) {
-  use _ <- result.try(params |> check_params)
+  // use _ <- result.try(params |> check_params)
   use json_string <- result.try(
     utils.get_final_url(
       client.base_url,
@@ -208,10 +207,7 @@ fn make_request(
       client.key,
       params |> forecast_params_to_params_list,
     )
-    |> fn(x) {
-      io.println(x)
-      utils.make_request(x)
-    }
+    |> utils.make_request
     |> result.map_error(fn(x) { errors.HttpError(x) }),
   )
   use raw_result <- result.try(forecast.raw_forecast_result_from_json(
@@ -226,7 +222,6 @@ fn check_params(params: ForecastParams) -> Result(Bool, errors.SunnyError) {
   todo
 }
 
-// That took so long :')
 fn forecast_params_to_params_list(
   params: ForecastParams,
 ) -> List(utils.RequestParameter) {

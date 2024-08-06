@@ -2,6 +2,8 @@ import birl
 import gleam/dict
 import gleam/dynamic.{dict, field, float, int, list, optional_field, string}
 import gleam/float
+import gleam/int
+import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option
@@ -35,6 +37,13 @@ pub type RawForecastResult {
 pub fn raw_forecast_result_from_json(
   json_string: String,
 ) -> Result(RawForecastResult, errors.SunnyError) {
+  let any_of_string_or_int_or_float =
+    dynamic.any([
+      string,
+      fn(x) { result.map(float(x), fn(f) { float.to_string(f) }) },
+      fn(x) { result.map(int(x), fn(n) { int.to_string(n) }) },
+    ])
+
   let forecast_decoder =
     utils.decode14(
       RawForecastResult,
@@ -44,14 +53,20 @@ pub fn raw_forecast_result_from_json(
       field("utc_offset_seconds", int),
       field("timezone", string),
       field("timezone_abbreviation", string),
-      optional_field("hourly", dict(string, list(string))),
+      optional_field(
+        "hourly",
+        dict(string, list(any_of_string_or_int_or_float)),
+      ),
       optional_field("hourly_units", dict(string, string)),
-      optional_field("daily", dict(string, list(string))),
+      optional_field("daily", dict(string, list(any_of_string_or_int_or_float))),
       optional_field("daily_units", dict(string, string)),
-      optional_field("minutely_15", dict(string, list(string))),
+      optional_field(
+        "minutely_15",
+        dict(string, list(any_of_string_or_int_or_float)),
+      ),
       optional_field("minutely_15_units", dict(string, string)),
-      optional_field("current", dict(string, string)),
-      optional_field("current_15_units", dict(string, string)),
+      optional_field("current", dict(string, any_of_string_or_int_or_float)),
+      optional_field("current_units", dict(string, string)),
     )
   json.decode(from: json_string, using: forecast_decoder)
   |> result.map_error(fn(e) { errors.DecodeError(e) })
@@ -229,7 +244,7 @@ pub fn refine_raw_time_ranged_data(
             Error(_) -> False
           }
           && list.all(v, fn(value) {
-            case float.parse(value) {
+            case utils.parse_float_or_int(value) {
               Ok(_) -> True
               Error(_) -> False
             }
@@ -252,7 +267,7 @@ pub fn refine_raw_time_ranged_data(
               let data_list =
                 v
                 |> list.map(fn(s) {
-                  let res = float.parse(s)
+                  let res = utils.parse_float_or_int(s)
                   case res {
                     Ok(f) -> measurement.Measurement(f, unit)
                     // Will not happen because checked earlier
@@ -303,7 +318,7 @@ pub fn refine_raw_current_data(
             Ok(_) -> True
             Error(_) -> False
           }
-          && case float.parse(v) {
+          && case utils.parse_float_or_int(v) {
             Ok(_) -> True
             Error(_) -> False
           }
@@ -321,7 +336,7 @@ pub fn refine_raw_current_data(
               // It's Ok because it has been checked earlier
               let assert Ok(var) = from_string_fn(k)
               let assert Ok(unit) = dict.get(data_units, k)
-              let assert Ok(value) = float.parse(v)
+              let assert Ok(value) = utils.parse_float_or_int(v)
               data.CurrentData(
                 ..d,
                 data: d.data
