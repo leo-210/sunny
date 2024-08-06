@@ -1,4 +1,4 @@
-# 🌤️ Sunny (WIP)
+# 🌤️ Sunny
 
 An [Open-meteo API](https://open-meteo.com/) client written in Gleam. 
 
