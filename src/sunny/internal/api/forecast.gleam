@@ -238,7 +238,6 @@ pub fn refine_raw_time_ranged_data(
       case
         list.all(dict.to_list(data), fn(tuple) {
           let #(k, v) = tuple
-          io.debug(tuple)
 
           case from_string_fn(k) {
             Ok(_) -> True
