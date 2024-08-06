@@ -23,3 +23,12 @@ pub type DailyVariable {
   WindGusts10mMax
   WindDirection10mDominant
 }
+
+pub const all = [
+  MaximumTemperature2m, MinimumTemperature2m, ApparentTemperatureMax,
+  ApparentTemperatureMin, PrecipitationSum, RainSum, ShowersSum, SnowfallSum,
+  PrecipitationHours, PrecipitationProbabilityMax, PrecipitationProbabilityMin,
+  PrecipitationProbabilityMean, WorstWeatherCode, Sunrise, Sunset,
+  SunshineSuration, DaylightDuration, WindSpeed10mMax, WindGusts10mMax,
+  WindDirection10mDominant,
+]

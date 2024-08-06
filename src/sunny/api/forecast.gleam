@@ -85,9 +85,9 @@ pub type ForecastResult {
 }
 
 pub type ForecastParams {
-  /// The different parameters available on the Forecast API
+  /// The different parameters available on the Forecast API.
   /// 
-  /// See <https://open-meteo.com/en/docs>
+  /// See <https://open-meteo.com/en/docs> for further reference.
   ForecastParams(
     // TODO: Support multiple positions in one call
     position: position.Position,
@@ -155,34 +155,84 @@ pub fn params(position: position.Position) -> ForecastParams {
 
 /// Returns a new ForecastParams with the specified hourly list
 pub fn set_hourly(
-  p: ForecastParams,
-  h: List(instant.InstantVariable),
+  params: ForecastParams,
+  hourly_list: List(instant.InstantVariable),
 ) -> ForecastParams {
-  ForecastParams(..p, hourly: h)
+  ForecastParams(..params, hourly: hourly_list)
+}
+
+/// Returns a new `ForecastParams` with all the hourly variables except the
+/// ones in the `except` argument.
+pub fn set_all_hourly(
+  params: ForecastParams,
+  except: List(instant.InstantVariable),
+) -> ForecastParams {
+  set_all(params, except, instant.all, set_hourly)
 }
 
 /// Returns a new ForecastParams with the specified daily list
 pub fn set_daily(
-  p: ForecastParams,
-  d: List(daily.DailyVariable),
+  params: ForecastParams,
+  daily_list: List(daily.DailyVariable),
 ) -> ForecastParams {
-  ForecastParams(..p, daily: d)
+  ForecastParams(..params, daily: daily_list)
+}
+
+/// Returns a new `ForecastParams` with all the daily variables except the 
+/// ones in the `except` argument
+pub fn set_all_daily(
+  params: ForecastParams,
+  except: List(daily.DailyVariable),
+) -> ForecastParams {
+  set_all(params, except, daily.all, set_daily)
 }
 
 /// Returns a new ForecastParams with the specified 15-minutely list
 pub fn set_minutely(
-  p: ForecastParams,
-  m: List(instant.InstantVariable),
+  params: ForecastParams,
+  minutely_list: List(instant.InstantVariable),
 ) -> ForecastParams {
-  ForecastParams(..p, minutely: m)
+  ForecastParams(..params, minutely: minutely_list)
+}
+
+/// Returns a new `ForecastParams` with all the minutely variables except the
+/// ones in the `except` argument.
+pub fn set_all_minutely(
+  params: ForecastParams,
+  except: List(instant.InstantVariable),
+) -> ForecastParams {
+  set_all(params, except, instant.all, set_minutely)
 }
 
 /// Returns a new ForecastParams with the specified hourly list
 pub fn set_current(
-  p: ForecastParams,
-  c: List(instant.InstantVariable),
+  params: ForecastParams,
+  current_list: List(instant.InstantVariable),
 ) -> ForecastParams {
-  ForecastParams(..p, current: c)
+  ForecastParams(..params, current: current_list)
+}
+
+/// Returns a new `ForecastParams` with all the current variables except the
+/// ones in the `except` argument.
+pub fn set_all_current(
+  params: ForecastParams,
+  except: List(instant.InstantVariable),
+) -> ForecastParams {
+  set_all(params, except, instant.all, set_current)
+}
+
+fn set_all(
+  params: ForecastParams,
+  except: List(a),
+  all: List(a),
+  set_fn: fn(ForecastParams, List(a)) -> ForecastParams,
+) -> ForecastParams {
+  case except {
+    [] -> params |> set_fn(all)
+    [_, ..] ->
+      params
+      |> set_fn(list.filter(all, fn(x) { list.contains(except, x) }))
+  }
 }
 
 pub fn get_forecast(
@@ -192,7 +242,6 @@ pub fn get_forecast(
   make_request(client, params)
 }
 
-// TODO: Parse json response into a record 
 fn make_request(
   client: client.Client,
   params: ForecastParams,
@@ -222,10 +271,10 @@ fn make_request(
 fn unify_params(params: ForecastParams) -> ForecastParams {
   ForecastParams(
     ..params,
-    hourly: set.to_list(set.from_list(params.hourly)),
-    daily: set.to_list(set.from_list(params.daily)),
-    minutely: set.to_list(set.from_list(params.minutely)),
-    current: set.to_list(set.from_list(params.current)),
+    hourly: list.unique(params.hourly),
+    daily: list.unique(params.daily),
+    minutely: list.unique(params.minutely),
+    current: list.unique(params.current),
   )
 }
 
