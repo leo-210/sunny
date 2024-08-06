@@ -3,7 +3,6 @@ import gleam/dict
 import gleam/dynamic.{dict, field, float, int, list, optional_field, string}
 import gleam/float
 import gleam/int
-import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option

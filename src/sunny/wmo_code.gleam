@@ -1,4 +1,7 @@
-// See https://open-meteo.com/en/docs (at the bottom of the page).
+/// Translates the `Int` WMOCode to a human-readable
+///`String`. 
+/// 
+/// See https://open-meteo.com/en/docs (at the bottom of the page).
 pub fn to_string(code: Int) {
   case code {
     0 -> "Clear sky"

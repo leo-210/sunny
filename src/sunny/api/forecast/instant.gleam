@@ -1,7 +1,7 @@
 /// Variables that can be obtained at a specific time (for `hourly`, `minutely`
 /// and `current` fields)
 /// 
-/// See https://open-meteo.com/en/docs
+/// See <https://open-meteo.com/en/docs>
 pub type InstantVariable {
   Temperature2m
   Temperature80m
@@ -37,6 +37,7 @@ pub type InstantVariable {
   IsDay
 }
 
+/// A list of all available instant variables.
 pub const all = [
   Temperature2m, Temperature80m, Temperature120m, Temperature180m,
   RelativeHumidity2m, DewPoint2m, ApparentTemperature, PressureMsl,

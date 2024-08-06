@@ -12,12 +12,12 @@ Makes it easier to get weather forecasts, current and past weather data with dif
 Add this package to your gleam project (not online yet)
 
 ```sh
-gleam add sunny@1
+gleam add sunny
 ```
 
 ### Getting the current temperature in a city
 <details open>
-  <summary>Code</summary>
+  <summary>Example code</summary>
 
 ```gleam
 import gleam/dict

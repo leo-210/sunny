@@ -1,6 +1,6 @@
 /// Variables that can be obtained at for a specific day (for the `daily` field)
 /// 
-/// See https://open-meteo.com/en/docs
+/// See <https://open-meteo.com/en/docs>
 pub type DailyVariable {
   MaximumTemperature2m
   MinimumTemperature2m
@@ -25,6 +25,7 @@ pub type DailyVariable {
   WindDirection10mDominant
 }
 
+/// A list of all available daily variables.
 pub const all = [
   MaximumTemperature2m, MinimumTemperature2m, ApparentTemperatureMax,
   ApparentTemperatureMin, PrecipitationSum, RainSum, ShowersSum, SnowfallSum,

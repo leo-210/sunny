@@ -35,17 +35,7 @@ pub type Data {
   Data(time: birl.Time, data: measurement.Measurement)
 }
 
-fn get_range_var(
-  from data: TimeRangedData(a),
-  get var: a,
-) -> Result(List(measurement.Measurement), errors.DataError) {
-  data.data
-  |> dict.get(var)
-  |> result.map_error(fn(_) {
-    errors.DataNotFoundError("Could not find variable in data.")
-  })
-}
-
+/// Converts a `TimeRangedData` to a `CurrentData`, given a specific `time`.
 pub fn range_to_current(
   from data: TimeRangedData(a),
   at time: birl.Time,
@@ -84,6 +74,10 @@ pub fn range_to_current(
   }
 }
 
+/// Converts a `TimeRangedData` to a list of `Data` for a specific `InstantVariable`
+/// or `DailyVariable`.
+/// 
+/// Used in the `hourly_forecast` example.
 pub fn range_to_data_list(
   from data: TimeRangedData(a),
   get var: a,
@@ -113,4 +107,15 @@ fn do_range_to_data_list(
         "Please open an issue on Github if you encountered this error.",
       ))
   }
+}
+
+fn get_range_var(
+  from data: TimeRangedData(a),
+  get var: a,
+) -> Result(List(measurement.Measurement), errors.DataError) {
+  data.data
+  |> dict.get(var)
+  |> result.map_error(fn(_) {
+    errors.DataNotFoundError("Could not find variable in data.")
+  })
 }

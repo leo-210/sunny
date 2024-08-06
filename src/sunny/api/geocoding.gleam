@@ -1,8 +1,8 @@
-//// The module for interacting with the Geocoding API.
-//// Useful for getting the coordinates of a city to then get the weather 
-//// forecast.
+//// The module for interacting with the Geocoding API. Useful for getting the
+//// coordinates of a city to then get the weather forecast.
 //// 
-//// ### Example
+//// ## Example
+//// 
 //// ```gleam
 //// import sunny
 //// import sunny/api/geocoding
@@ -13,10 +13,11 @@
 ////   let sunny = sunny.new()
 //// 
 ////   let assert Ok(location) =
-////     geocoding.get_first_location(sunny, {
+////     sunny
+////     |> geocoding.get_first_location(
 ////       geocoding.params("marseille")
 ////       |> geocoding.set_language(geocoding.French)
-////     })
+////     )
 //// 
 ////   io.println(
 ////     location.name
@@ -26,7 +27,7 @@
 ////     <> float.to_string(location.longitude),
 ////   )
 //// }
-//// ```gleam
+//// ```
 
 import gleam/dict
 import gleam/dynamic.{dict, field, float, int, list, optional_field, string}
@@ -56,12 +57,9 @@ pub type Language {
 
 /// Represents a location on good old earth. Can be obtained with the geocoding
 /// API.
+/// 
+/// See <https://open-meteo.com/en/docs/geocoding-api>
 pub type Location {
-  /// See https://open-meteo.com/en/docs/geocoding-api for more information
-  /// on the fields.
-  /// 
-  /// If you want to use specific coordinates, use the `Coordinates` 
-  /// constructor.
   Location(
     latitude: Float,
     longitude: Float,
@@ -108,11 +106,19 @@ pub fn get_first_location(
   client: Client,
   params: GeocodingParams,
 ) -> Result(Location, errors.SunnyError) {
-  use locations <- result.try(get_locations(client, set_count(params, 1)))
+  // Ok because the count is between 0 and 100.
+  let assert Ok(params) = set_count(params, 1)
+
+  use locations <- result.try(get_locations(client, params))
   case locations {
     [head, ..] -> Ok(head)
     // Shouldn't happen because an error would be returned by `get_locations`
-    [] -> panic as "`get_locations` gave empty list instead of error."
+    [] ->
+      Error(
+        errors.SunnyInternalError(errors.InternalError(
+          "`get_locations` gave empty list instead of error.",
+        )),
+      )
   }
 }
 
@@ -128,13 +134,18 @@ pub fn params(name: String) -> GeocodingParams {
 /// Creates a new GeocodingParams from the one specified, changing its count
 /// field.
 /// 
-/// The count must be between 1 and 100. If it is out of bounds, the program
-/// will panic.
-pub fn set_count(params: GeocodingParams, count: Int) -> GeocodingParams {
+/// The count must be between 1 and 100. If it is out of bounds, an error will
+/// be returned.
+pub fn set_count(
+  params: GeocodingParams,
+  count: Int,
+) -> Result(GeocodingParams, errors.ApiError) {
   case count {
     count if count > 100 || count < 1 ->
-      panic as "Geocoding parameter count must be between 1 and 100."
-    _ -> GeocodingParams(..params, count: count)
+      Error(errors.InvalidArgumentError(
+        "Geocoding parameter count must be between 1 and 100.",
+      ))
+    _ -> Ok(GeocodingParams(..params, count: count))
   }
 }
 
