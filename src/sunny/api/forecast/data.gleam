@@ -1,3 +1,5 @@
+//// A module containing useful functions to handle API results.
+
 import birl
 import gleam/dict
 import gleam/list
@@ -47,8 +49,39 @@ pub fn get_range_var(
 pub fn range_to_current(
   from data: TimeRangedData(a),
   at time: birl.Time,
-) -> Result(CurrentData(a), errors.DataError) {
-  todo
+) -> Result(CurrentData(a), errors.SunnyError) {
+  case data.time {
+    [] ->
+      Error(
+        errors.DataError(errors.DataNotFoundError(
+          "Invalid time for provided data.",
+        )),
+      )
+    [head, ..tail] ->
+      case head == time {
+        False -> {
+          let new_data =
+            data.data
+            |> dict.map_values(fn(_, v) {
+              // Should be ok, because the `time` length is the same as `v`
+              // length.
+              let assert [_, ..new] = v
+              new
+            })
+          range_to_current(TimeRangedData(time: tail, data: new_data), time)
+        }
+        True ->
+          Ok(CurrentData(
+            time: time,
+            data: dict.fold(data.data, dict.new(), fn(d, k, v) {
+              dict.insert(d, k, {
+                let assert [head, ..] = v
+                head
+              })
+            }),
+          ))
+      }
+  }
 }
 
 pub fn range_to_data_list(
