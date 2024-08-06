@@ -5,7 +5,6 @@ import sunny
 import sunny/api/forecast
 import sunny/api/forecast/instant
 import sunny/api/geocoding
-import sunny/measurement
 
 pub fn main() {
   glacier.main()
