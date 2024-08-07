@@ -15,3 +15,12 @@ gleam_json = ">= 1.0.1 and < 2.0.0"
 
 [dev-dependencies]
 glacier = ">= 1.1.0 and < 2.0.0"
+
+[documentation]
+pages = [
+  { title = "Getting started", path = "getting_started.html", source = "./docs/getting_started.md" },
+  { title = "Examples", path = "examples.html", source = "./docs/examples.md" },
+  { title = "Example : City informations", path = "examples/city_info.html", source = "./docs/examples/city_info.md" },
+  { title = "Example : Current temperature", path = "examples/current_temperature.html", source = "./docs/examples/current_temperature.md" },
+  { title = "Example : Hourly forecast", path = "examples/hourly_forecast.html", source = "./docs/examples/hourly_forecast.md" },
+]
