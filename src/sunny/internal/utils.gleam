@@ -1,21 +1,14 @@
-import efetch
 import gleam/dynamic.{type DecodeError, type Decoder, type Dynamic}
 import gleam/float
 import gleam/http/request
 import gleam/int
 import gleam/list
-import gleam/result.{try}
 import gleam/string
 
-pub fn make_request(url: String) -> Result(String, efetch.HttpError) {
+pub fn get_request(url: String) -> request.Request(String) {
   let assert Ok(request) = request.to(url)
-
-  use response <- try(
-    request
-    |> request.prepend_header("accept", "application/json")
-    |> efetch.send,
-  )
-  Ok(response.body)
+  request
+  |> request.prepend_header("accept", "application/json")
 }
 
 pub type RequestParameter {

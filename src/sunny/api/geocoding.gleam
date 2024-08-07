@@ -31,6 +31,7 @@
 
 import gleam/dict
 import gleam/dynamic.{dict, field, float, int, list, optional_field, string}
+import gleam/http/request
 import gleam/int
 import gleam/json
 import gleam/list
@@ -92,38 +93,13 @@ pub type GeocodingParams {
   GeocodingParams(name: String, count: Int, language: Language)
 }
 
-/// Gets a list of locations that match the searched name (specified in `params`).
-pub fn get_locations(
-  client: Client,
-  params: GeocodingParams,
-) -> Result(List(Location), errors.SunnyError) {
-  make_request(client, params)
-}
-
-/// Get the first search result given by `get_locations`.
-/// Overrights the `count` parameter of `params`.
-pub fn get_first_location(
-  client: Client,
-  params: GeocodingParams,
-) -> Result(Location, errors.SunnyError) {
-  use locations <- result.try(get_locations(client, set_count(params, 1)))
-  case locations {
-    [head, ..] -> Ok(head)
-    // Shouldn't happen because an error would be returned by `get_locations`
-    [] ->
-      Error(
-        errors.SunnyInternalError(errors.InternalError(
-          "`get_locations` gave empty list instead of error.",
-        )),
-      )
-  }
-}
-
 /// Creates a new GeocodingParams with the default parameters. Takes the name 
-/// of the researched location (by name or by postal code). 
+/// of the researched location (by name or by postal code).
+///
 /// Defaults : 
-///   - count : 10
-///   - language : english
+/// - count : 10
+/// - language : English
+/// These are the same defaults as the Open-Meteo API's ones.
 pub fn params(name: String) -> GeocodingParams {
   GeocodingParams(name, 10, English)
 }
@@ -145,28 +121,57 @@ pub fn set_language(
   GeocodingParams(..params, language: language)
 }
 
-fn make_request(
+/// Get a `request.Request(String)` according to the specified `GeocodingParams`.
+///
+/// Once you made a request using your favorite HTTP client, pass the `String`
+/// body to `get_result`.
+pub fn get_request(
   client: Client,
   params: GeocodingParams,
-) -> Result(List(Location), errors.SunnyError) {
+) -> request.Request(String) {
   let params = case params.count {
     c if c > 100 || c < 1 -> set_count(params, c)
     _ -> params
   }
 
-  case
-    utils.get_final_url(
-      client.base_url,
-      "geocoding",
-      client.commercial,
-      "/search",
-      client.key,
-      params |> geocoding_params_to_params_list,
-    )
-    |> utils.make_request
-  {
-    Ok(body) -> locations_from_json(body)
-    Error(err) -> Error(errors.HttpError(err))
+  utils.get_final_url(
+    client.base_url,
+    "geocoding",
+    client.commercial,
+    "/search",
+    client.key,
+    params |> geocoding_params_to_params_list,
+  )
+  |> utils.get_request
+}
+
+/// Get a `List` of `Location` from the body of a HTTP request response. If you
+/// only want the first search result, you can use `get_first_result`.
+/// 
+/// You can get a `request.Request` to the Forecast API by using `get_request`.
+pub fn get_result(
+  response_body: String,
+) -> Result(List(Location), errors.SunnyError) {
+  locations_from_json(response_body)
+}
+
+/// Get the first `Location` from the body of a HTTP request response. If your
+/// location is not first, you can use `get_result` instead.
+/// 
+/// You can get a `request.Request` to the Forecast API by using `get_request`.
+pub fn get_first_result(
+  response_body: String,
+) -> Result(Location, errors.SunnyError) {
+  use locations <- result.try(get_result(response_body))
+  case locations {
+    [head, ..] -> Ok(head)
+    // Shouldn't happen because an error would be returned by `get_locations`
+    [] ->
+      Error(
+        errors.SunnyInternalError(errors.InternalError(
+          "`get_locations` gave empty list instead of error.",
+        )),
+      )
   }
 }
 

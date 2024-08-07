@@ -61,6 +61,7 @@
 import birl
 
 import gleam/float
+import gleam/http/request
 import gleam/int
 import gleam/list
 import gleam/option
@@ -191,7 +192,19 @@ pub type ForecastParams {
   )
 }
 
-/// Creates a new ForecastParams with the default values
+/// Creates a new ForecastParams with the default values. Takes the `Position`
+/// of the place you to get the forecast (see the `sunny/position` module).
+///
+/// Defaults :
+/// - temperature_unit : Celsius
+/// - wind_speed_unit : Kilometers per hour
+/// - precipitation_unit : Millimeters
+/// - timezone : GMT
+/// - past_days : 0
+/// - forecast_days : 7
+/// - cell_selection : Land
+/// These are the same defaults as the Open-Meteo API's ones. Other parameters
+/// are set to `option.None` or to an empty `List`.
 pub fn params(position: position.Position) -> ForecastParams {
   ForecastParams(
     position,
@@ -460,34 +473,35 @@ fn set_all(
   }
 }
 
-/// Get a `ForecastResult` according to the specified `ForecastParams`.
-pub fn get_forecast(
+/// Get a `request.Request(String)` according to the specified `ForecastParams`.
+///
+/// Once you made a request using your favorite HTTP client, pass the `String`
+/// body to `get_result`.
+pub fn get_request(
   client: client.Client,
   params: ForecastParams,
-) -> Result(ForecastResult, errors.SunnyError) {
-  make_request(client, params)
-}
-
-fn make_request(
-  client: client.Client,
-  params: ForecastParams,
-) -> Result(ForecastResult, errors.SunnyError) {
+) -> request.Request(String) {
   let params = verify_params(params)
 
-  use json_string <- result.try(
-    utils.get_final_url(
-      client.base_url,
-      "",
-      client.commercial,
-      "/forecast",
-      client.key,
-      params |> forecast_params_to_params_list,
-    )
-    |> utils.make_request
-    |> result.map_error(fn(x) { errors.HttpError(x) }),
+  utils.get_final_url(
+    client.base_url,
+    "",
+    client.commercial,
+    "/forecast",
+    client.key,
+    params |> forecast_params_to_params_list,
   )
+  |> utils.get_request
+}
+
+/// Get a `ForecastResult` from the body of a HTTP request response.
+/// 
+/// You can get a request to the Forecast API by using `get_request`.
+pub fn get_result(
+  response_body: String,
+) -> Result(ForecastResult, errors.SunnyError) {
   use raw_result <- result.try(forecast.raw_forecast_result_from_json(
-    json_string,
+    response_body,
   ))
   raw_result
   |> refine_raw_result()

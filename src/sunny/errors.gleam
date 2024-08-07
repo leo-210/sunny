@@ -1,11 +1,8 @@
 //// A module with the errors you could get using Sunny.
 
-import efetch
 import gleam/json
 
 pub type SunnyError {
-  /// Something went wrong with the HTTP request.
-  HttpError(err: efetch.HttpError)
   /// Something went wrong with decoding the json obtained with the request.
   DecodeError(err: json.DecodeError)
   /// An API-related error (e.g. wrong arguments)
