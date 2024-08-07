@@ -1,66 +1,9 @@
 //// The module for interactiong with the Forecast API. 
-//// 
-//// ## Example
-//// 
-//// Get the hourly forecast of a city
-//// 
-//// ```gleam
-//// import birl
-//// 
-//// import gleam/float
-//// import gleam/io
-//// import gleam/list
-//// 
-//// import sunny
-//// import sunny/api/forecast
-//// import sunny/api/forecast/data
-//// import sunny/api/forecast/instant
-//// import sunny/position
-//// import sunny/wmo_code
-//// 
-//// pub fn main() {
-////   // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
-////   // API access.
-////   let sunny = sunny.new()
-//// 
-////   // You can get the coordinates of a place using the Geocoding API. See 
-////   // `sunny/api/geocoding`, or the `city_info` example.
-////   //
-////   // Once you have a `Location`, use `geocoding.location_to_position()` to
-////   // convert it to a position.
-////   let position = position.Position(43.0, 5.0)
-//// 
-////   let assert Ok(forecast_result) =
-////     sunny
-////     |> forecast.get_forecast(
-////       forecast.params(position)
-////       // All available variables are listed in the `sunny/api/forecast/instant`
-////       // module.
-////       // Daily variables are in `sunny/api/forecast/daily`.
-////       |> forecast.set_hourly([instant.WeatherCode])
-////       |> forecast.set_forecast_days(1),
-////     )
-//// 
-////   let assert Ok(hourly_weather) =
-////     forecast_result.hourly
-////     |> data.range_to_data_list(instant.WeatherCode)
-//// 
-////   hourly_weather
-////   |> list.each(fn(timed_data) {
-////     io.debug(
-////       birl.to_time_string(timed_data.time)
-////       <> " : "
-////       // `wmo_code.to_string` translates the `Int` WMOCode to a human-readable
-////       // `String`. 
-////       <> wmo_code.to_string(float.round(timed_data.data.value)),
-////     )
-////   })
-//// }
-//// ```
 
 import birl
 
 import gleam/float
+import gleam/http/request
 import gleam/int
 import gleam/list
 import gleam/option
@@ -191,7 +134,19 @@ pub type ForecastParams {
   )
 }
 
-/// Creates a new ForecastParams with the default values
+/// Creates a new ForecastParams with the default values. Takes the `Position`
+/// of the place you to get the forecast (see the `sunny/position` module).
+///
+/// Defaults :
+/// - temperature_unit : Celsius
+/// - wind_speed_unit : Kilometers per hour
+/// - precipitation_unit : Millimeters
+/// - timezone : GMT
+/// - past_days : 0
+/// - forecast_days : 7
+/// - cell_selection : Land
+/// These are the same defaults as the Open-Meteo API's ones. Other parameters
+/// are set to `option.None` or to an empty `List`.
 pub fn params(position: position.Position) -> ForecastParams {
   ForecastParams(
     position,
@@ -460,34 +415,35 @@ fn set_all(
   }
 }
 
-/// Get a `ForecastResult` according to the specified `ForecastParams`.
-pub fn get_forecast(
+/// Get a `request.Request(String)` according to the specified `ForecastParams`.
+///
+/// Once you made a request using your favorite HTTP client, pass the `String`
+/// body to `get_result`.
+pub fn get_request(
   client: client.Client,
   params: ForecastParams,
-) -> Result(ForecastResult, errors.SunnyError) {
-  make_request(client, params)
-}
-
-fn make_request(
-  client: client.Client,
-  params: ForecastParams,
-) -> Result(ForecastResult, errors.SunnyError) {
+) -> request.Request(String) {
   let params = verify_params(params)
 
-  use json_string <- result.try(
-    utils.get_final_url(
-      client.base_url,
-      "",
-      client.commercial,
-      "/forecast",
-      client.key,
-      params |> forecast_params_to_params_list,
-    )
-    |> utils.make_request
-    |> result.map_error(fn(x) { errors.HttpError(x) }),
+  utils.get_final_url(
+    client.base_url,
+    "",
+    client.commercial,
+    "/forecast",
+    client.key,
+    params |> forecast_params_to_params_list,
   )
+  |> utils.get_request
+}
+
+/// Get a `ForecastResult` from the body of a HTTP request response.
+/// 
+/// You can get a request to the Forecast API by using `get_request`.
+pub fn get_result(
+  response_body: String,
+) -> Result(ForecastResult, errors.SunnyError) {
   use raw_result <- result.try(forecast.raw_forecast_result_from_json(
-    json_string,
+    response_body,
   ))
   raw_result
   |> refine_raw_result()

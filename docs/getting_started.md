@@ -5,7 +5,12 @@ First, make sure you added the `sunny` package to your gleam project !
 gleam add sunny
 ```
 
-To start interacting with the diffent Open-meteo (OM) APIs, you need to create a new sunny client :
+You will also need a way to make HTTP requests, as this package only returns
+requests and handles the results. For that, you can use HTTP clients such as 
+`gleam_httpc` or `gleam_fetch`.
+
+To start interacting with the diffent Open-meteo (OM) APIs, you need to create
+a new sunny client :
 ```gleam
 import sunny
 
