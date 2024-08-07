@@ -1,33 +1,5 @@
 //// The module for interacting with the Geocoding API. Useful for getting the
 //// coordinates of a city to then get the weather forecast.
-//// 
-//// ## Example
-//// 
-//// ```gleam
-//// import sunny
-//// import sunny/api/geocoding
-//// 
-//// pub fn main() {
-////   // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
-////   // API access 
-////   let sunny = sunny.new()
-//// 
-////   let assert Ok(location) =
-////     sunny
-////     |> geocoding.get_first_location(
-////       geocoding.params("marseille")
-////       |> geocoding.set_language(geocoding.French)
-////     )
-//// 
-////   io.println(
-////     location.name
-////     <> " is located at :\n"
-////     <> float.to_string(location.latitude)
-////     <> "\n"
-////     <> float.to_string(location.longitude),
-////   )
-//// }
-//// ```
 
 import gleam/dict
 import gleam/dynamic.{dict, field, float, int, list, optional_field, string}
@@ -165,11 +137,11 @@ pub fn get_first_result(
   use locations <- result.try(get_result(response_body))
   case locations {
     [head, ..] -> Ok(head)
-    // Shouldn't happen because an error would be returned by `get_locations`
+    // Shouldn't happen because an error would be returned by `get_result`
     [] ->
       Error(
         errors.SunnyInternalError(errors.InternalError(
-          "`get_locations` gave empty list instead of error.",
+          "`get_result` gave empty list instead of error.",
         )),
       )
   }

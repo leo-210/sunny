@@ -19,6 +19,9 @@ gleam add sunny
 <details open>
   <summary>Example code</summary>
 
+Here, the function `send` corresponds to a function that makes a HTTP request.
+For that, you can use HTTP clients such as `gleam_httpc` or `gleam_fetch`.
+
 ```gleam
 import gleam/dict
 import gleam/io
@@ -39,6 +42,9 @@ pub fn main() {
       geocoding.params("marseille")
       |> geocoding.set_language(geocoding.French),
     )
+    // Make a HTTP request
+    |> send
+    |> geocoding.get_first_result
 
   let assert Ok(forecast_result) =
     sunny
@@ -46,6 +52,9 @@ pub fn main() {
       forecast.params(geocoding.location_to_position(location))
       |> forecast.set_current([instant.Temperature2m]),
     )
+    // Make a HTTP request
+    |> send
+    |> forecast.get_result
 
   let assert option.Some(current_data) = forecast_result.current
 

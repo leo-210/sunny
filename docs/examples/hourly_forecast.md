@@ -3,11 +3,16 @@
 This example uses the Forecast API. For more information, check the 
 `sunny/api/forecast` module !
 
+Here, the function `send` corresponds to a function that makes a HTTP request.
+For that, you can use HTTP clients such as `gleam_httpc` or `gleam_fetch`.
+
 ```gleam
 import birl
+
 import gleam/float
 import gleam/io
 import gleam/list
+
 import sunny
 import sunny/api/forecast
 import sunny/api/forecast/data
@@ -20,8 +25,8 @@ pub fn hourly_forecast_test() {
   // API access.
   let sunny = sunny.new()
 
-  // You can get the coordinates of a place using the Geocoding API. See 
-  // `sunny/api/geocoding`, or the `city_info` example.
+  // You can get the coordinates of a place using the Geocoding API. See the
+  // `sunny/api/geocoding` module, or the `city_info` example.
   //
   // Once you have a `Location`, use `geocoding.location_to_position()` to
   // convert it to a position.
@@ -29,7 +34,7 @@ pub fn hourly_forecast_test() {
 
   let assert Ok(forecast_result) =
     sunny
-    |> forecast.get_forecast(
+    |> forecast.get_request(
       forecast.params(position)
       // All available variables are listed in the `sunny/api/forecast/instant`
       // module.
@@ -37,6 +42,9 @@ pub fn hourly_forecast_test() {
       |> forecast.set_hourly([instant.WeatherCode])
       |> forecast.set_forecast_days(1),
     )
+    // Make a HTTP request.
+    |> send
+    |> forecast.get_result
 
   let assert Ok(hourly_weather) =
     forecast_result.hourly
