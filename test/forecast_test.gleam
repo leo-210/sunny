@@ -1,5 +1,9 @@
 import glacier/should
 import gleam/dict
+import gleam/fetch
+import gleam/http/request
+import gleam/httpc
+import gleam/javascript/promise
 import gleam/list
 import gleam/option
 import sunny
@@ -13,12 +17,15 @@ const coords = position.Position(43.0, 5.0)
 pub fn hourly_all_test() {
   let sunny = sunny.new()
 
-  let assert Ok(forecast_result) =
+  let req =
     sunny
-    |> forecast.get_forecast(
+    |> forecast.get_request(
       forecast.params(coords)
       |> forecast.set_all_hourly([]),
     )
+
+  use body <- send(req)
+  let assert Ok(forecast_result) = forecast.get_result(body)
 
   use var <- list.each(instant.all)
   let l =
@@ -33,12 +40,15 @@ pub fn hourly_all_test() {
 pub fn daily_all_test() {
   let sunny = sunny.new()
 
-  let assert Ok(forecast_result) =
+  let req =
     sunny
-    |> forecast.get_forecast(
+    |> forecast.get_request(
       forecast.params(coords)
       |> forecast.set_all_daily([]),
     )
+
+  use body <- send(req)
+  let assert Ok(forecast_result) = forecast.get_result(body)
 
   use var <- list.each(daily.all)
   let l =
@@ -53,11 +63,14 @@ pub fn daily_all_test() {
 pub fn minutely_all_test() {
   let sunny = sunny.new()
 
-  let assert Ok(forecast_result) =
+  let req =
     sunny
-    |> forecast.get_forecast(
+    |> forecast.get_request(
       forecast.params(coords) |> forecast.set_all_minutely([]),
     )
+
+  use body <- send(req)
+  let assert Ok(forecast_result) = forecast.get_result(body)
 
   use var <- list.each(instant.all)
   let l =
@@ -72,11 +85,14 @@ pub fn minutely_all_test() {
 pub fn current_all_test() {
   let sunny = sunny.new()
 
-  let assert Ok(forecast_result) =
+  let req =
     sunny
-    |> forecast.get_forecast(
+    |> forecast.get_request(
       forecast.params(coords) |> forecast.set_all_current([]),
     )
+
+  use body <- send(req)
+  let assert Ok(forecast_result) = forecast.get_result(body)
 
   let assert option.Some(current) = forecast_result.current
 
@@ -89,9 +105,12 @@ pub fn current_all_test() {
 pub fn none_test() {
   let sunny = sunny.new()
 
-  let assert Ok(forecast_result) =
+  let req =
     sunny
-    |> forecast.get_forecast(forecast.params(coords))
+    |> forecast.get_request(forecast.params(coords))
+
+  use body <- send(req)
+  let assert Ok(forecast_result) = forecast.get_result(body)
 
   forecast_result.hourly.time
   |> list.is_empty
@@ -123,4 +142,23 @@ pub fn none_test() {
   forecast_result.daily.data
   |> dict.get(var)
   |> should.be_error
+}
+
+@target(erlang)
+fn send(req: request.Request(String), callback: fn(String) -> Nil) -> Nil {
+  let assert Ok(res) = httpc.send(req)
+
+  callback(res.body)
+}
+
+@target(javascript)
+fn send(req: request.Request(String), callback: fn(String) -> Nil) -> Nil {
+  {
+    use resp <- promise.try_await(fetch.send(req))
+    use resp <- promise.try_await(fetch.read_text_body(resp))
+
+    callback(resp.body)
+    promise.resolve(Ok(Nil))
+  }
+  Nil
 }
