@@ -2,7 +2,7 @@ name = "sunny"
 version = "0.3.0"
 gleam = ">= 0.32.0"
 
-description = "A gleam Open-meteo API client."
+description = "A gleam Open-meteo API client to get weather forecasts."
 licences = ["MIT"]
 repository = { type = "github", user = "leo-210", repo = "sunny" }
 
