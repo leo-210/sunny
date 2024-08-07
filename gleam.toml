@@ -6,8 +6,6 @@ description = "A gleam Open-meteo API client to get weather forecasts."
 licences = ["MIT"]
 repository = { type = "github", user = "leo-210", repo = "sunny" }
 
-target = "javascript"
-
 [dependencies]
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 gleam_http = ">= 3.6.0 and < 4.0.0"
