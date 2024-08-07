@@ -1,4 +1,3 @@
-import glacier/should
 import gleam/dict
 import gleam/fetch
 import gleam/http/request
@@ -6,6 +5,7 @@ import gleam/httpc
 import gleam/javascript/promise
 import gleam/list
 import gleam/option
+import gleeunit/should
 import sunny
 import sunny/api/forecast
 import sunny/api/forecast/daily

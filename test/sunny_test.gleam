@@ -1,17 +1,17 @@
-import glacier
-import glacier/should
 import gleam/dict
 import gleam/fetch
 import gleam/http/request
 import gleam/httpc
 import gleam/javascript/promise
+import gleeunit
+import gleeunit/should
 import sunny
 import sunny/api/forecast
 import sunny/api/forecast/instant
 import sunny/api/geocoding
 
 pub fn main() {
-  glacier.main()
+  gleeunit.main()
 }
 
 pub fn geocoding_and_forecast_test() {

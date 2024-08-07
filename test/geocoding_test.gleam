@@ -1,10 +1,9 @@
-import glacier/should
 import gleam/fetch
 import gleam/http/request
 import gleam/httpc
 import gleam/javascript/promise
-import gleam/list
 import gleam/result
+import gleeunit/should
 import sunny
 import sunny/api/geocoding
 import sunny/errors
