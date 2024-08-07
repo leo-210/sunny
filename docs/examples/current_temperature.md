@@ -1,15 +1,20 @@
-import birl
-import gleam/float
+# Get the current temperature at a position
+
+This example uses the Forecast API. For more information, check the 
+`sunny/api/forecast` module !
+
+```gleam
+import gleam/dict
 import gleam/io
-import gleam/list
+import gleam/option
 import sunny
 import sunny/api/forecast
 import sunny/api/forecast/data
 import sunny/api/forecast/instant
+import sunny/measurement
 import sunny/position
-import sunny/wmo_code
 
-pub fn hourly_forecast_test() {
+pub fn current_temperature_test() {
   // Use `new_commercial("<your_api_key>")` if you have a commercial Open-meteo
   // API access.
   let sunny = sunny.new()
@@ -25,25 +30,21 @@ pub fn hourly_forecast_test() {
     sunny
     |> forecast.get_forecast(
       forecast.params(position)
-      // All available variables are listed in the `sunny/api/forecast/instant`
-      // module.
+      // All available variables are listed in the `sunny/api/forecast/instant` module.
       // Daily variables are in `sunny/api/forecast/daily`.
-      |> forecast.set_hourly([instant.WeatherCode])
-      |> forecast.set_forecast_days(1),
+      |> forecast.set_current([instant.Temperature2m]),
     )
 
-  let assert Ok(hourly_weather) =
-    forecast_result.hourly
-    |> data.range_to_data_list(instant.WeatherCode)
+  let assert option.Some(data.CurrentData(data: data, ..)) =
+    forecast_result.current
 
-  hourly_weather
-  |> list.each(fn(timed_data) {
-    io.println(
-      birl.to_time_string(timed_data.time)
-      <> " : "
-      // `wmo_code.to_string` translates the `Int` WMOCode to a human-readable
-      // `String`. 
-      <> wmo_code.to_string(float.round(timed_data.data.value)),
-    )
-  })
+  let assert Ok(current_temperature) =
+    data
+    |> dict.get(instant.Temperature2m)
+
+  io.println(
+    "Current temperature : " <> measurement.to_string(current_temperature),
+  )
 }
+```
+

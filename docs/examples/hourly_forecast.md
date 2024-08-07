@@ -1,3 +1,9 @@
+# Get the hourly forecast for the current day at a position
+
+This example uses the Forecast API. For more information, check the 
+`sunny/api/forecast` module !
+
+```gleam
 import birl
 import gleam/float
 import gleam/io
@@ -47,3 +53,4 @@ pub fn hourly_forecast_test() {
     )
   })
 }
+```
