@@ -1,5 +1,5 @@
 name = "sunny"
-version = "0.2.0"
+version = "0.3.0"
 gleam = ">= 0.32.0"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
