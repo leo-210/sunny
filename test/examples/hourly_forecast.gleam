@@ -1,10 +1,8 @@
 import birl
-import gleam/fetch
 import gleam/float
 import gleam/http/request
 import gleam/httpc
 import gleam/io
-import gleam/javascript/promise
 import gleam/list
 import sunny
 import sunny/api/forecast
@@ -25,7 +23,7 @@ pub fn hourly_forecast_test() {
   // convert it to a position.
   let position = position.Position(43.0, 5.0)
 
-  let req =
+  let assert Ok(forecast_result) =
     sunny
     |> forecast.get_request(
       forecast.params(position)
@@ -35,9 +33,8 @@ pub fn hourly_forecast_test() {
       |> forecast.set_hourly([instant.WeatherCode])
       |> forecast.set_forecast_days(1),
     )
-
-  use body <- send(req)
-  let assert Ok(forecast_result) = forecast.get_result(body)
+    |> send
+    |> forecast.get_result
 
   let assert Ok(hourly_weather) =
     forecast_result.hourly
@@ -55,21 +52,8 @@ pub fn hourly_forecast_test() {
   })
 }
 
-@target(erlang)
-fn send(req: request.Request(String), callback: fn(String) -> Nil) -> Nil {
+fn send(req: request.Request(String)) -> String {
   let assert Ok(res) = httpc.send(req)
 
-  callback(res.body)
-}
-
-@target(javascript)
-fn send(req: request.Request(String), callback: fn(String) -> Nil) -> Nil {
-  {
-    use resp <- promise.try_await(fetch.send(req))
-    use resp <- promise.try_await(fetch.read_text_body(resp))
-
-    callback(resp.body)
-    promise.resolve(Ok(Nil))
-  }
-  Nil
+  res.body
 }
