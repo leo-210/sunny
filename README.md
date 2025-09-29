@@ -1,3 +1,7 @@
+# Archived
+
+I do not intend to continue working on this. Feel free to fork the repo if you want to!
+
 # 🌤️ Sunny
 
 An [Open-meteo API](https://open-meteo.com/) client written in Gleam. 
